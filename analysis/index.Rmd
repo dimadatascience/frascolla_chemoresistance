@@ -1,0 +1,60 @@
+---
+title: "Home"
+site: workflowr::wflow_site
+output:
+  workflowr::wflow_html:
+    toc: false
+editor_options:
+  chunk_output_type: console
+---
+
+<div class="alert alert-dismissible alert-info">
+  <button type="button" class="close" data-dismiss="alert">&times;</button>
+  <strong>New label!</strong> The 'new' label denotes the most recently delivered report(s).
+</div>
+
+This  website contains RNAseq data analyses for the chemoresistance project.
+
+# Bulk RNAseq data analysis
+
+- [Overview of the RNAseq](01_baseline_analysis.html)<span class="label btn-warning">new report</span>
+
+## Single shRNA vs scramble at day X
+
+- [IFI6 sh1 day1 vs SCR day1](02_de_ifi6_sh1_day1.html)<span class="label btn-warning">new report</span>
+- [IFI6 sh1 day2 vs SCR day2](02_de_ifi6_sh1_day2.html)<span class="label btn-warning">new report</span>
+- [IFI6 sh1 day3 vs SCR day3](02_de_ifi6_sh1_day3.html)<span class="label btn-warning">new report</span>
+- [IFI6 sh1 day4 vs SCR day4](02_de_ifi6_sh1_day4.html)<span class="label btn-warning">new report</span>
+- [IFI6 sh1 day5 vs SCR day5](02_de_ifi6_sh1_day5.html)<span class="label btn-warning">new report</span>
+
+- [IFI6 sh2 day1 vs SCR day1](02_de_ifi6_sh1_day1.html)<span class="label btn-warning">new report</span>
+- [IFI6 sh2 day2 vs SCR day2](02_de_ifi6_sh1_day2.html)<span class="label btn-warning">new report</span>
+- [IFI6 sh2 day3 vs SCR day3](02_de_ifi6_sh1_day3.html)<span class="label btn-warning">new report</span>
+- [IFI6 sh2 day4 vs SCR day4](02_de_ifi6_sh1_day4.html)<span class="label btn-warning">new report</span>
+- [IFI6 sh2 day5 vs SCR day5](02_de_ifi6_sh1_day5.html)<span class="label btn-warning">new report</span>
+
+## pooled shRNA vs scramble at day X
+
+- [IFI6 day1 vs SCR day1](03_de_ifi6_scr_day1.html)<span class="label btn-warning">new report</span>
+- [IFI6 day2 vs SCR day2](03_de_ifi6_scr_day2.html)<span class="label btn-warning">new report</span>
+- [IFI6 day3 vs SCR day3](03_de_ifi6_scr_day3.html)<span class="label btn-warning">new report</span>
+- [IFI6 day4 vs SCR day4](03_de_ifi6_scr_day4.html)<span class="label btn-warning">new report</span>
+- [IFI6 day5 vs SCR day5](03_de_ifi6_scr_day5.html)<span class="label btn-warning">new report</span>
+
+## shRNA day X vs day 0
+
+- [IFI6 day1 vs day 0](04_de_ifi6_day1_day0.html)<span class="label btn-warning">new report</span>
+- [IFI6 day2 vs day 0](04_de_ifi6_day2_day0.html)<span class="label btn-warning">new report</span>
+- [IFI6 day3 vs day 0](04_de_ifi6_day3_day0.html)<span class="label btn-warning">new report</span>
+- [IFI6 day4 vs day 0](04_de_ifi6_day4_day0.html)<span class="label btn-warning">new report</span>
+- [IFI6 day5 vs day 0](04_de_ifi6_day5_day0.html)<span class="label btn-warning">new report</span>
+
+## scramble day X vs day 0
+
+- [SCR day1 vs day 0](05_de_scr_day1_day0.html)<span class="label btn-warning">new report</span>
+- [SCR day2 vs day 0](05_de_scr_day2_day0.html)<span class="label btn-warning">new report</span>
+- [SCR day3 vs day 0](05_de_scr_day3_day0.html)<span class="label btn-warning">new report</span>
+- [SCR day4 vs day 0](05_de_scr_day4_day0.html)<span class="label btn-warning">new report</span>
+- [SCR day5 vs day 0](05_de_scr_day5_day0.html)<span class="label btn-warning">new report</span>
+
+
