@@ -25,12 +25,12 @@ params:
   dds_file: "./data/deseq2.dds.RData" 
   exp:
     value:
-      condition: "shSCR_Day1"
-      description: "shSCR_Day1"
+      condition: "shIFI6_Day1"
+      description: "shIFI6_Day1"
   contr:
     value:
-      condition: "shSCR_Day0"
-      description: "shSCR_Day0"
+      condition: "shIFI6_Day0"
+      description: "shIFI6_Day0"
 ---
 
 ```{r}
@@ -463,4 +463,166 @@ cat("<br><br>")
 heat_A$h_all
 ```
 
-Non ci stanno geni differenzialmente espressi
+## Gene set enrichment analysis
+
+Further analysis is done through gene set enrichment analysis, which does not exclude genes based on logfc or adjusted p-value, as done previously.
+GSEA is performed separately on each subontology: biological processes (BP), cellular components (CC) and molecular functions (MF).
+The dot plot below shows all the enriched GO terms. The size of each dot correlates with the count of differentially expressed genes associated with each GO term. Furthermore, the color of each dot reflects the significance of the enrichment of the respective GO term, highlighting its relative importance.
+
+```{r gene_set_enrichment_analysis_A}
+genelist_A <- res_A$log2FoldChange
+names(genelist_A) <- res_A$gene
+
+ontologies <- list(
+  BP = "Biological Processes",
+  CC = "Cellular Components",
+  MF = "Molecular Functions"
+)
+
+pvalueCutoff <- 0.05
+gseaA_list <- list()
+chunk_heights <- numeric()
+
+for (ont in names(ontologies)) {
+  gsea_result <- run_gsea_ensembl(genelist_A, titleA_und, org, ont, pvalueCutoff = pvalueCutoff, toType = toupper(params$gene_name_type))
+  gseaA_list[[ont]] <- gsea_result
+  n_terms <- nrow(gsea_result@result)
+  chunk_heights[ont] <- as.numeric(max(5, n_terms * 0.3))
+}
+```
+
+```{r gseaA_BP, fig.height=params$gsea_terms, fig.width=13, results="asis", echo=FALSE}
+if (na.omit(nrow(gseaA_list[["BP"]]@result)) > 0) {
+  cat(paste("### GO -", ontologies[["BP"]], "\n\n-", vs_descr, "\n\n- P value cutoff:", pvalueCutoff, "\n\n"))
+  print(dotplot(gseaA_list[["BP"]], showCategory = params$gsea_terms, split = ".sign", label_format = 100) + 
+          facet_grid(. ~ .sign) + 
+          ggtitle(paste("Biological Processes enrichment")))
+  DT::datatable(
+    gseaA_list[["BP"]]@result[, c("p.adjust", "Description", "core_enrichment")],
+    extensions = 'Buttons',
+    options = list(
+      dom = 'Blfrtip',
+      buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+      lengthMenu = list(c(10, 25, 50,-1),
+                        c(10, 25, 50, "All"))
+    ),
+    rownames = TRUE,
+  )
+} else {
+  cat("### GO - Biological Processes -", vs_descr, ": No enrichment found, P value cutoff:", pvalueCutoff, "\n\n")
+}
+```
+
+```{r gseaA_CC, fig.height=params$gsea_terms, fig.width=13, results="asis", echo=FALSE}
+if (na.omit(nrow(gseaA_list[["CC"]]@result)) > 0) {
+  cat(paste("### GO -", ontologies[["CC"]], "\n\n-", vs_descr, "\n\n- P value cutoff:", pvalueCutoff, "\n\n"))
+  print(dotplot(gseaA_list[["CC"]], showCategory = params$gsea_terms, split = ".sign", label_format = 100) + 
+          facet_grid(. ~ .sign) + 
+          ggtitle(paste("Cellular Components enrichment")))
+  DT::datatable(
+    gseaA_list[["CC"]]@result[, c("p.adjust", "Description", "core_enrichment")],
+    extensions = 'Buttons',
+    options = list(
+      dom = 'Blfrtip',
+      buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+      lengthMenu = list(c(10, 25, 50,-1),
+                        c(10, 25, 50, "All"))
+    ),
+    rownames = TRUE,
+  )
+} else {
+  cat("### GO - Cellular Components -", vs_descr, ": No enrichment found, P value cutoff:", pvalueCutoff, "\n\n")
+}
+```
+
+```{r gseaA_MF, fig.height=params$gsea_terms, fig.width=13, results="asis", echo=FALSE}
+if (na.omit(nrow(gseaA_list[["MF"]]@result)) > 0) {
+  cat(paste("### GO -", ontologies[["MF"]], "\n\n-", vs_descr, "\n\n- P value cutoff:", pvalueCutoff, "\n\n"))
+  print(dotplot(gseaA_list[["MF"]], showCategory = params$gsea_terms, split = ".sign", label_format = 100) + 
+          facet_grid(. ~ .sign) + 
+          ggtitle(paste("Molecular Functions enrichment")))
+  DT::datatable(
+    gseaA_list[["MF"]]@result[, c("p.adjust", "Description", "core_enrichment")],
+    extensions = 'Buttons',
+    options = list(
+      dom = 'Blfrtip',
+      buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+      lengthMenu = list(c(10, 25, 50,-1),
+                        c(10, 25, 50, "All"))
+    ),
+    rownames = TRUE,
+  )
+} else {
+  cat("### GO - Molecular Functions -", vs_descr, ": No enrichment found, P value cutoff:", pvalueCutoff, "\n\n")
+}
+```
+
+
+## Over representation analysis
+
+We performed a functional enrichment analysis based on Over-Representation Analysis (ORA) using the GO pathway database. Unlike GSEA, which considers the entire ranked list of genes, ORA focuses only on genes that meet specific differential expression thresholds (adjusted p-value and log2 fold change).
+The analysis was conducted separately for upregulated and downregulated genes to identify GO pathways that are significantly enriched in each group, compared to what would be expected by chance. This allows for a clearer biological interpretation of distinct transcriptional programs activated or suppressed in the dataset.
+The dot plots below display all significantly enriched GO pathways. Each dot’s size represents the number of differentially expressed genes associated with the pathway, while the color reflects the statistical significance of the enrichment (adjusted p-value).
+
+
+```{r over_representation_analysis, fig.width=10, results="asis"}
+pvalue_cutoff_ORA <- 0.05
+# qvalue <- 0.05
+
+
+genelist_df_A <- data.frame(
+  gene = deg_A$gene,
+  log2FC = deg_A$log2FoldChange
+)
+go_enrichment_A_up <- goenrichment(genelist_df_A, logfc_col = "log2FC", down = FALSE, n_genes = n_genes, pvalueCutoff = pvalue_cutoff_ORA, qvalueCutoff = qvalue, gene_name_type = toupper(params$gene_name_type))
+# go_enrichment_A_down <- goenrichment(genelist_df_A, logfc_col = "log2FC", down = TRUE, n_genes = n_genes, pvalueCutoff = pvalue_cutoff_ORA, qvalueCutoff = qvalue, gene_name_type = toupper(params$gene_name_type))
+```
+
+
+```{r over_representation_analysis_up, fig.width=10, results="asis"}
+if (nrow(na.omit(go_enrichment_A_up@result)) > 0) {
+  cat(paste("### ORA - UP", "\n\n-", vs_descr, "\n\n- P value cutoff:", pvalue_cutoff_ORA, "\n\n- Q value cutoff:", qvalue, "\n\n"))
+  print(dotplot(go_enrichment_A_up, label_format = 50) +
+        ggtitle("ORA (UPregulated genes)"))
+  DT::datatable(
+    go_enrichment_A_up@result[, c("p.adjust", "Description", "geneID")],
+    extensions = 'Buttons',
+    options = list(
+      dom = 'Blfrtip',
+      buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+      lengthMenu = list(c(10, 25, 50,-1),
+                        c(10, 25, 50, "All"))
+    ),
+    rownames = TRUE,
+  )
+} else {
+  cat(paste("### ORA - UP", "\n\n-", vs_descr, ": No enrichment found\n\n- P value cutoff:", pvalue_cutoff_ORA, "\n\n- Q value cutoff:", qvalue, "\n\n"))
+}
+```
+
+```{r over_representation_analysis_down, fig.width=10, results="asis"}
+  cat(paste("### ORA - DOWN", "\n\n-", vs_descr, ": No enrichment found\n\n- P value cutoff:", pvalue_cutoff_ORA, "\n\n- Q value cutoff:", qvalue, "\n\n"))
+```
+
+
+
+```{r WGCNA_analysis, results="asis"}
+# cat(paste0("## WGCNA analysis
+
+# The idea behind WGCNA analysis is to identify genes with similar expression patterns, so genes that are co-expressed, that can be functionally associated.
+# Starting from gene expression data, like counts matrix from RNA-seq, a weighted correlation matrix is constructed and then this allow to identify modules, clusters of genes with similar expression patterns. Furthermore, these modules can be investigated to identify driver genes or to find correlation with phenotype.
+# WGCNA analysis is designed to be unsupervised method, so genes do not have to be filtered based on differential expression analysis. Genes with low counts should be removed from counts matrix; counts should be normalized and batch effect removed before running analysis."))
+
+# wgcna <- my_WGCNA_analysis(
+#   sample_info = sample_info, 
+#   dds = dds,
+# )
+# wgcna$ggplot_PCA
+# table(wgcna$module_colors)
+# head(wgcna$module_eigengenes)
+# head(wgcna$stats)
+# head(wgcna$module_trait_correlation)
+# head(wgcna$module_trait_pvals)
+# par(mar = c(10, 10, 5, 5), las = 2)
+# wgcna$CLP
+```
