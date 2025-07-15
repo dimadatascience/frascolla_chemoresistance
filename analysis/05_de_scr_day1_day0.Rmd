@@ -23,6 +23,7 @@ params:
   sample_info_file: "./data/samples_info_day_vs_day0_pooled_sh.tsv"
   utils_file: "./src/__utils_rna_seq_functions.R"
   dds_file: "./data/deseq2.dds.RData" 
+  ribosomal_genes_file: "./src/genes2filter_symbol.csv"
   exp:
     value:
       condition: "shSCR_Day1"
@@ -169,7 +170,10 @@ selected_group <- deseq_groups[[selected_group_name]]
 
 ```{r load_data_deseq, results="asis"}
 # Load DESeq2 object containing raw count data
-load(rdata_file)
+dds <- myload_filter_ribo(rdata_file,
+  filter_ribo = TRUE, 
+  ribo_file = params$ribosomal_genes_file
+)
 
 sample_info$sample <- make.names(sample_info$sample)
 rownames(sample_info) <- sample_info$sample

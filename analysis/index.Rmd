@@ -59,6 +59,7 @@ This  website contains RNAseq data analyses for the chemoresistance project.
 
 ## pooled shRNA vs scramble at day 0
 
+- [IFI6 day0 vs SCR day0](06_de_ifi6_day0_scr_day0.html)<span class="label btn-warning">new report</span>
 - [IFI6 day1 vs SCR day0](06_de_ifi6_day1_scr_day0.html)<span class="label btn-warning">new report</span>
 - [IFI6 day2 vs SCR day0](06_de_ifi6_day2_scr_day0.html)<span class="label btn-warning">new report</span>
 - [IFI6 day3 vs SCR day0](06_de_ifi6_day3_scr_day0.html)<span class="label btn-warning">new report</span>

@@ -16,22 +16,22 @@ params:
   num_replicates: 2
   batch_effect: null
   logfc: 1
+  gsea_terms: 15
   qvalue: 0.05
   top_n_genes_used4ora: 1000
-  gsea_terms: 15
   gene_name_type: "symbol"
-  sample_info_file: "./data/samples_info_day_vs_day0_pooled_sh.tsv"
+  sample_info_file: "./data/samples_info_sh1plus2_vs_scr.tsv"
   utils_file: "./src/__utils_rna_seq_functions.R"
   dds_file: "./data/deseq2.dds.RData" 
   ribosomal_genes_file: "./src/genes2filter_symbol.csv"
   exp:
     value:
-      condition: "shIFI6_Day3"
-      description: "shIFI6_Day3"
-  contr:
-    value:
       condition: "shIFI6_Day0"
       description: "shIFI6_Day0"
+  contr:
+    value:
+      condition: "shSCR_Day0"
+      description: "shSCR_Day0"
 ---
 
 ```{r}
