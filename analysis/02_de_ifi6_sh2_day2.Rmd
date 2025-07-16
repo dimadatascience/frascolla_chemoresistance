@@ -24,6 +24,7 @@ params:
   utils_file: "./src/__utils_rna_seq_functions.R"
   dds_file: "./data/deseq2.dds.RData" 
   ribosomal_genes_file: "./src/genes2filter_symbol.csv"
+  hallmark_file: "./src/h.all.v2025.1.Hs.symbols.gmt"
   exp:
     value:
       condition: "shIFI6_2_Day2"
@@ -50,6 +51,7 @@ logfc=params$logfc
 qvalue=params$qvalue
 rdata_file=params$dds_file
 n_genes=params$top_n_genes_used4ora
+hallmark_file=params$hallmark_file
 ```
 
 ```{r dynamic_title, results="asis", echo=FALSE}
@@ -80,6 +82,7 @@ library(limma)
 library(tibble)
 #library(CorLevelPlot)
 library(ReactomePA)
+library(msigdbr)
 
 org <- org.Hs.eg.db
 
@@ -317,10 +320,7 @@ mypcaAnalysis(
 
 ### Interpretation PCA Analysis
 
-Although the samples do not form perfectly distinct clusters, the first principal component clearly separates the experimental and control groups. 
-This supports the validity of the samples.
-
-The same analysis will be repeated after removing the outlier samples S61882_S_plus_NuMA_A and S61886_S-NuMA_B to assess whether their removal improves the quality of the differential gene expression results.
+Missing Interpretation
 
 </div>
 
@@ -470,6 +470,9 @@ heat_A$h_all
 ## Gene set enrichment analysis
 
 Further analysis is done through gene set enrichment analysis, which does not exclude genes based on logfc or adjusted p-value, as done previously.
+
+### GSEA - GO
+
 GSEA is performed separately on each subontology: biological processes (BP), cellular components (CC) and molecular functions (MF).
 The dot plot below shows all the enriched GO terms. The size of each dot correlates with the count of differentially expressed genes associated with each GO term. Furthermore, the color of each dot reflects the significance of the enrichment of the respective GO term, highlighting its relative importance.
 
@@ -497,7 +500,7 @@ for (ont in names(ontologies)) {
 
 ```{r gseaA_BP, fig.height=params$gsea_terms, fig.width=13, results="asis", echo=FALSE}
 if (na.omit(nrow(gseaA_list[["BP"]]@result)) > 0) {
-  cat(paste("### GO -", ontologies[["BP"]], "\n\n-", vs_descr, "\n\n- P value cutoff:", pvalueCutoff, "\n\n"))
+  cat(paste("#### GO -", ontologies[["BP"]], "\n\n-", vs_descr, "\n\n- P value cutoff:", pvalueCutoff, "\n\n"))
   print(dotplot(gseaA_list[["BP"]], showCategory = params$gsea_terms, split = ".sign", label_format = 100) + 
           facet_grid(. ~ .sign) + 
           ggtitle(paste("Biological Processes enrichment")))
@@ -513,13 +516,13 @@ if (na.omit(nrow(gseaA_list[["BP"]]@result)) > 0) {
     rownames = TRUE,
   )
 } else {
-  cat("### GO - Biological Processes -", vs_descr, ": No enrichment found, P value cutoff:", pvalueCutoff, "\n\n")
+  cat("#### GO - Biological Processes -", vs_descr, ": No enrichment found, P value cutoff:", pvalueCutoff, "\n\n")
 }
 ```
 
 ```{r gseaA_CC, fig.height=params$gsea_terms, fig.width=13, results="asis", echo=FALSE}
 if (na.omit(nrow(gseaA_list[["CC"]]@result)) > 0) {
-  cat(paste("### GO -", ontologies[["CC"]], "\n\n-", vs_descr, "\n\n- P value cutoff:", pvalueCutoff, "\n\n"))
+  cat(paste("#### GO -", ontologies[["CC"]], "\n\n-", vs_descr, "\n\n- P value cutoff:", pvalueCutoff, "\n\n"))
   print(dotplot(gseaA_list[["CC"]], showCategory = params$gsea_terms, split = ".sign", label_format = 100) + 
           facet_grid(. ~ .sign) + 
           ggtitle(paste("Cellular Components enrichment")))
@@ -535,13 +538,13 @@ if (na.omit(nrow(gseaA_list[["CC"]]@result)) > 0) {
     rownames = TRUE,
   )
 } else {
-  cat("### GO - Cellular Components -", vs_descr, ": No enrichment found, P value cutoff:", pvalueCutoff, "\n\n")
+  cat("#### GO - Cellular Components -", vs_descr, ": No enrichment found, P value cutoff:", pvalueCutoff, "\n\n")
 }
 ```
 
 ```{r gseaA_MF, fig.height=params$gsea_terms, fig.width=13, results="asis", echo=FALSE}
 if (na.omit(nrow(gseaA_list[["MF"]]@result)) > 0) {
-  cat(paste("### GO -", ontologies[["MF"]], "\n\n-", vs_descr, "\n\n- P value cutoff:", pvalueCutoff, "\n\n"))
+  cat(paste("#### GO -", ontologies[["MF"]], "\n\n-", vs_descr, "\n\n- P value cutoff:", pvalueCutoff, "\n\n"))
   print(dotplot(gseaA_list[["MF"]], showCategory = params$gsea_terms, split = ".sign", label_format = 100) + 
           facet_grid(. ~ .sign) + 
           ggtitle(paste("Molecular Functions enrichment")))
@@ -557,10 +560,52 @@ if (na.omit(nrow(gseaA_list[["MF"]]@result)) > 0) {
     rownames = TRUE,
   )
 } else {
-  cat("### GO - Molecular Functions -", vs_descr, ": No enrichment found, P value cutoff:", pvalueCutoff, "\n\n")
+  cat("#### GO - Molecular Functions -", vs_descr, ": No enrichment found, P value cutoff:", pvalueCutoff, "\n\n")
 }
 ```
 
+### GSEA - Hallmark
+
+GSEA is performed using the Hallmark gene sets, which represent well-defined biological states and processes.
+The dot plot below displays all enriched Hallmark pathways. 
+The size of each dot corresponds to the number of differentially expressed genes contributing to each pathway. 
+Additionally, the color of each dot indicates the significance of the pathway’s enrichment, emphasizing its relative importance.
+
+```{r gsea_hallmark}
+genelist_A <- res_A$log2FoldChange
+names(genelist_A) <- res_A$gene
+
+pvalueCutoff <- 0.05
+# gseaA_list <- list()
+# chunk_heights <- numeric()
+
+gsea_result <- run_gsea_hallmark_local(
+  genelist = genelist_A, 
+  gmt_file = hallmark_file, 
+  pvalueCutoff = pvalueCutoff
+)
+```
+
+```{r gsea_hallmark_output, fig.height=params$gsea_terms, fig.width=13, results="asis", echo=FALSE}
+if (nrow(na.omit(gsea_result@result)) > 0) {
+  cat(paste("#### Hallmark Gene Sets\n\n-", vs_descr, "\n\n- P value cutoff:", pvalueCutoff, "\n\n"))
+  print(dotplot(gsea_result, showCategory = params$gsea_terms) + 
+          ggtitle("Hallmark gene sets enrichment"))
+  DT::datatable(
+    gsea_result@result[, c("p.adjust", "Description", "core_enrichment")],
+    extensions = 'Buttons',
+    options = list(
+      dom = 'Blfrtip',
+      buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+      lengthMenu = list(c(10, 25, 50, -1),
+                        c(10, 25, 50, "All"))
+    ),
+    rownames = TRUE
+  )
+} else {
+  cat("#### Hallmark gene sets -", vs_descr, ": No enrichment found, P value cutoff:", pvalueCutoff, "\n\n")
+}
+```
 
 ## Over representation analysis
 
@@ -641,6 +686,7 @@ if (exists("skip_ORA") && skip_ORA) {
   }
 }
 ```
+
 
 
 
