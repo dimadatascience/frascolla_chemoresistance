@@ -616,30 +616,68 @@ The dot plots below display all significantly enriched GO pathways. Each dot’s
 
 ```{r over_representation_analysis, fig.width=10, results="asis"}
 pvalue_cutoff_ORA <- 0.05
-# qvalue <- 0.05
-
 
 genelist_df_A <- data.frame(
   gene = deg_A$gene,
   log2FC = deg_A$log2FoldChange
 )
 
-skip_ORA <- FALSE
+if (toupper(params$gene_name_type) == "SYMBOL") {
+  valid_symbols_logical <- genelist_df_A$gene %in% keys(org.Hs.eg.db, keytype = "SYMBOL")
+  invalid_genes <- genelist_df_A$gene[!valid_symbols_logical]
 
-if (nrow(genelist_df_A) > 0) {
-  go_enrichment_A_up <- goenrichment(genelist_df_A, logfc_col = "log2FC", down = FALSE, n_genes = n_genes, pvalueCutoff = pvalue_cutoff_ORA, qvalueCutoff = qvalue, gene_name_type = toupper(params$gene_name_type))
-  go_enrichment_A_down <- goenrichment(genelist_df_A, logfc_col = "log2FC", down = TRUE, n_genes = n_genes, pvalueCutoff = pvalue_cutoff_ORA, qvalueCutoff = qvalue, gene_name_type = toupper(params$gene_name_type))
-} else {
-  warning("genelist_df_A is empty! Skipping GO enrichment.")
-  skip_ORA <- TRUE
+  if (length(invalid_genes) > 0) {
+    cat("The following genes are not valid symbols and will be removed from the analysis:\n\n")
+    cat(paste(invalid_genes, collapse = ", "), "\n\n")
+  }
+  genelist_df_A <- genelist_df_A[valid_symbols_logical, ]
 }
 
+genes_up <- head(genelist_df_A[order(-genelist_df_A$log2FC), "gene"], n_genes)
+genes_down <- head(genelist_df_A[order(genelist_df_A$log2FC), "gene"], n_genes)
+
+skip_ORA_up <- FALSE
+skip_ORA_down <- FALSE
+
+if (length(genes_up) > 0) {
+  go_enrichment_A_up <- goenrichment_test(
+    genelist_df_A,
+    logfc_col = "log2FC",
+    down = FALSE,
+    n_genes = n_genes,
+    pvalueCutoff = pvalue_cutoff_ORA,
+    qvalueCutoff = qvalue,
+    gene_name_type = toupper(params$gene_name_type)
+  )
+  if (is.null(go_enrichment_A_up)) {
+    skip_ORA_up <- TRUE
+  }
+} else {
+  skip_ORA_up <- TRUE
+}
+
+if (length(genes_down) > 0) {
+  go_enrichment_A_down <- goenrichment_test(
+    genelist_df_A,
+    logfc_col = "log2FC",
+    down = TRUE,
+    n_genes = n_genes,
+    pvalueCutoff = pvalue_cutoff_ORA,
+    qvalueCutoff = qvalue,
+    gene_name_type = toupper(params$gene_name_type)
+  )
+  if (is.null(go_enrichment_A_down)) {
+    skip_ORA_down <- TRUE
+  }
+} else {
+  skip_ORA_down <- TRUE
+}
 ```
 
 
 ```{r over_representation_analysis_up, fig.width=10, results="asis"}
-if (exists("skip_ORA") && skip_ORA) {
-  cat("Skipping ORA analysis because genelist_df_A is empty.\n")
+if (exists("skip_ORA_up") && skip_ORA_up) {
+  cat("No valid upregulated genes available. Skipping ORA (UP).\n")
 } else {
   if (nrow(na.omit(go_enrichment_A_up@result)) > 0) {
     cat(paste("### ORA - UP", "\n\n-", vs_descr, "\n\n- P value cutoff:", pvalue_cutoff_ORA, "\n\n- Q value cutoff:", qvalue, "\n\n"))
@@ -663,8 +701,8 @@ if (exists("skip_ORA") && skip_ORA) {
 ```
 
 ```{r over_representation_analysis_down, fig.width=10, results="asis"}
-if (exists("skip_ORA") && skip_ORA) {
-  cat("Skipping ORA analysis because genelist_df_A is empty.\n")
+if (exists("skip_ORA_down") && skip_ORA_down) {
+  cat("No valid downregulated genes available. Skipping ORA (DOWN).\n")
 } else {
   if (nrow(na.omit(go_enrichment_A_down@result)) > 0) {
     cat(paste("### ORA - DOWN", "\n\n-", vs_descr, "\n\n- P value cutoff:", pvalue_cutoff_ORA, "\n\n- Q value cutoff:", qvalue, "\n\n"))
