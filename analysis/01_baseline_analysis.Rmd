@@ -579,6 +579,123 @@ ggplot(ifi6, aes(x = group, y = expression)) +
   )
 ```
 
+### Average Expression across all samples
+
+Below we present the distributions of the selected genes expression across conditions in a barplot where the height of each bar represents the average expression of all the selected genes in that particular condition. Each condition includes all the available replicates except those already filtered. 
+
+```{r load_data}
+list1 <- read.csv("/hpcnfs/scratch/DIMA/gmariani/PROJECTS/rna/reports/projects/frascolla/frascolla_chemoresistance/data/UNIQUELIST_shIFI6_vs_shIFI6.csv")[[1]]
+list2 <- read.csv("/hpcnfs/scratch/DIMA/gmariani/PROJECTS/rna/reports/projects/frascolla/frascolla_chemoresistance/data/UNIQUELIST_shIFI6_vs_shSCR.csv")[[1]]
+
+counts_matrix <- assay(dds, "counts")  # raw counts
+vst_matrix <- assay(dds, "vst") 
+```
+
+#### Average Expression, Raw counts, gene list: shIFI6_vs_shIFI6
+
+```{r barplot1}
+count_matrix_subset1 <- counts_matrix[rownames(counts_matrix) %in% list1, ]
+
+conditions <- gsub("_rep[0-9]+$", "", colnames(count_matrix_subset1))
+t_mat <- t(count_matrix_subset1)
+summed_mat <- rowsum(t_mat, group = conditions)
+rep_counts <- table(conditions)
+mean_mat <- sweep(summed_mat, 1, rep_counts, FUN = "/")
+mean_mat <- t(mean_mat)
+mean_expr_per_sample <- colMeans(mean_mat)
+df <- data.frame(
+  sample = names(mean_expr_per_sample),
+  mean_expression = mean_expr_per_sample
+)
+
+# plot con ggplot2
+ggplot(df, aes(x = sample, y = mean_expression)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  theme_minimal() +
+  xlab("Condition") +
+  ylab("Raw counts average gene expression") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### Average Expression, Raw counts, gene list: shIFI6_vs_shSCR
+
+```{r barplot2}
+count_matrix_subset2 <- counts_matrix[rownames(counts_matrix) %in% list2, ]
+
+conditions <- gsub("_rep[0-9]+$", "", colnames(count_matrix_subset2))
+t_mat <- t(count_matrix_subset2)
+summed_mat <- rowsum(t_mat, group = conditions)
+rep_counts <- table(conditions)
+mean_mat <- sweep(summed_mat, 1, rep_counts, FUN = "/")
+mean_mat <- t(mean_mat)
+mean_expr_per_sample <- colMeans(mean_mat)
+df <- data.frame(
+  sample = names(mean_expr_per_sample),
+  mean_expression = mean_expr_per_sample
+)
+
+# plot con ggplot2
+ggplot(df, aes(x = sample, y = mean_expression)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  theme_minimal() +
+  xlab("Condition") +
+  ylab("Raw counts average gene expression") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### Average Expression, VST normalized counts, gene list: shIFI6_vs_shIFI6
+
+```{r barplot3}
+vst_matrix_subset1 <- vst_matrix[rownames(vst_matrix) %in% list1, ]
+
+conditions <- gsub("_rep[0-9]+$", "", colnames(vst_matrix_subset1))
+t_mat <- t(vst_matrix_subset1)
+summed_mat <- rowsum(t_mat, group = conditions)
+rep_counts <- table(conditions)
+mean_mat <- sweep(summed_mat, 1, rep_counts, FUN = "/")
+mean_mat <- t(mean_mat)
+mean_expr_per_sample <- colMeans(mean_mat)
+df <- data.frame(
+  sample = names(mean_expr_per_sample),
+  mean_expression = mean_expr_per_sample
+)
+
+# plot con ggplot2
+ggplot(df, aes(x = sample, y = mean_expression)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  theme_minimal() +
+  xlab("Condition") +
+  ylab("VST normalized average gene expression") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### Average Expression, VST normalized counts, gene list: shIFI6_vs_shSCR
+
+```{r barplot4}
+vst_matrix_subset2 <- vst_matrix[rownames(vst_matrix) %in% list2, ]
+
+conditions <- gsub("_rep[0-9]+$", "", colnames(vst_matrix_subset2))
+t_mat <- t(vst_matrix_subset2)
+summed_mat <- rowsum(t_mat, group = conditions)
+rep_counts <- table(conditions)
+mean_mat <- sweep(summed_mat, 1, rep_counts, FUN = "/")
+mean_mat <- t(mean_mat)
+mean_expr_per_sample <- colMeans(mean_mat)
+df <- data.frame(
+  sample = names(mean_expr_per_sample),
+  mean_expression = mean_expr_per_sample
+)
+
+# plot con ggplot2
+ggplot(df, aes(x = sample, y = mean_expression)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  theme_minimal() +
+  xlab("Condition") +
+  ylab("VST normalized average gene expression") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
 ## Differential expression analysis
 
 The report with specific comparisons can be found here:
