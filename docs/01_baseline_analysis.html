@@ -40,7 +40,7 @@
 <link href="site_libs/htmltools-fill-0.5.8.1/fill.css" rel="stylesheet" />
 <script src="site_libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
 <link href="site_libs/datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet" />
-<script src="site_libs/datatables-binding-0.33/datatables.js"></script>
+<script src="site_libs/datatables-binding-0.34.0/datatables.js"></script>
 <link href="site_libs/dt-core-1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" />
 <link href="site_libs/dt-core-1.13.6/css/jquery.dataTables.extra.css" rel="stylesheet" />
 <script src="site_libs/dt-core-1.13.6/js/jquery.dataTables.min.js"></script>
@@ -52,9 +52,9 @@
 <script src="site_libs/dt-ext-buttons-1.13.6/js/buttons.html5.min.js"></script>
 <script src="site_libs/dt-ext-buttons-1.13.6/js/buttons.colVis.min.js"></script>
 <script src="site_libs/dt-ext-buttons-1.13.6/js/buttons.print.min.js"></script>
-<link href="site_libs/crosstalk-1.2.1/css/crosstalk.min.css" rel="stylesheet" />
-<script src="site_libs/crosstalk-1.2.1/js/crosstalk.min.js"></script>
-<script src="site_libs/plotly-binding-4.10.4/plotly.js"></script>
+<link href="site_libs/crosstalk-1.2.2/css/crosstalk.min.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.2.2/js/crosstalk.min.js"></script>
+<script src="site_libs/plotly-binding-4.11.0/plotly.js"></script>
 <script src="site_libs/typedarray-0.1/typedarray.min.js"></script>
 <link href="site_libs/plotly-htmlwidgets-css-2.11.1/plotly-htmlwidgets.css" rel="stylesheet" />
 <script src="site_libs/plotly-main-2.11.1/plotly-latest.min.js"></script>
@@ -385,7 +385,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Bulk RNAseq report</h1>
 <h4 class="author">Gianluca Alessio Mariani</h4>
-<h4 class="date">16 July, 2025</h4>
+<h4 class="date">26 September, 2025</h4>
 
 </div>
 
@@ -393,7 +393,7 @@ div.tocify {
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
 <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
-workflowr <span class="glyphicon glyphicon-ok text-success"
+workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger"
 aria-hidden="true"></span>
 </button>
 </p>
@@ -404,8 +404,8 @@ aria-hidden="true"></span>
 </li>
 <li>
 <a data-toggle="tab" href="#checks"> Checks <span
-class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
-</a>
+class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> </a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -414,13 +414,13 @@ class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2025-07-16
+<strong>Last updated:</strong> 2025-09-26
 </p>
 <p>
 <strong>Checks:</strong> <span
-class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6
 <span class="glyphicon glyphicon-exclamation-sign text-danger"
-aria-hidden="true"></span> 0
+aria-hidden="true"></span> 1
 </p>
 <p>
 <strong>Knit directory:</strong> <code>frascolla_chemoresistance/</code>
@@ -432,7 +432,7 @@ title="This is the local directory in which the code in this file was executed."
 This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
 analysis was created with <a
   href="https://github.com/workflowr/workflowr">workflowr</a> (version
-1.7.1). The <em>Checks</em> tab describes the reproducibility checks
+1.7.2). The <em>Checks</em> tab describes the reproducibility checks
 that were applied when the results were created. The <em>Past
 versions</em> tab lists the development history.
 </p>
@@ -530,30 +530,64 @@ run.</p>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative">
-<span class="glyphicon glyphicon-ok text-success"
-aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongabsolute">
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> <strong>File paths:</strong> absolute </a>
 </p>
 </div>
-<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div id="strongFilepathsstrongabsolute" class="panel-collapse collapse">
 <div class="panel-body">
-<p>Great job! Using relative paths to the files within your workflowr
-project makes it easier to run your code on other machines.</p>
+<p>
+Using absolute paths to the files within your workflowr project makes it
+difficult for you and others to run your code on a different machine.
+Change the absolute path(s) below to the suggested relative path(s) to
+make your code more reproducible.
+</p>
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th style="text-align:left;">
+absolute
+</th>
+<th style="text-align:left;">
+relative
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+/hpcnfs/scratch/DIMA/gmariani/PROJECTS/rna/reports/projects/frascolla/frascolla_chemoresistance/data/UNIQUELIST_shIFI6_vs_shIFI6.csv
+</td>
+<td style="text-align:left;">
+data/UNIQUELIST_shIFI6_vs_shIFI6.csv
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+/hpcnfs/scratch/DIMA/gmariani/PROJECTS/rna/reports/projects/frascolla/frascolla_chemoresistance/data/UNIQUELIST_shIFI6_vs_shSCR.csv
+</td>
+<td style="text-align:left;">
+data/UNIQUELIST_shIFI6_vs_shSCR.csv
+</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 </div>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomdimadatasciencefrascollachemoresistancetree4110172b272b911c7a9112b647dd702b421e24b5targetblank4110172a">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomdimadatasciencefrascollachemoresistancetree96c88b45747718fa212a55c967878c78a8888dc2targetblank96c88b4a">
 <span class="glyphicon glyphicon-ok text-success"
 aria-hidden="true"></span> <strong>Repository version:</strong>
-<a href="https://github.com/dimadatascience/frascolla_chemoresistance/tree/4110172b272b911c7a9112b647dd702b421e24b5" target="_blank">4110172</a>
+<a href="https://github.com/dimadatascience/frascolla_chemoresistance/tree/96c88b45747718fa212a55c967878c78a8888dc2" target="_blank">96c88b4</a>
 </a>
 </p>
 </div>
 <div
-id="strongRepositoryversionstrongahrefhttpsgithubcomdimadatasciencefrascollachemoresistancetree4110172b272b911c7a9112b647dd702b421e24b5targetblank4110172a"
+id="strongRepositoryversionstrongahrefhttpsgithubcomdimadatasciencefrascollachemoresistancetree96c88b45747718fa212a55c967878c78a8888dc2targetblank96c88b4a"
 class="panel-collapse collapse">
 <div class="panel-body">
 <p>
@@ -563,7 +597,7 @@ reproducibility.
 </p>
 <p>
 The results in this page were generated with repository version
-<a href="https://github.com/dimadatascience/frascolla_chemoresistance/tree/4110172b272b911c7a9112b647dd702b421e24b5" target="_blank">4110172</a>.
+<a href="https://github.com/dimadatascience/frascolla_chemoresistance/tree/96c88b45747718fa212a55c967878c78a8888dc2" target="_blank">96c88b4</a>.
 See the <em>Past versions</em> tab to see a history of the changes made
 to the R Markdown and HTML files.
 </p>
@@ -579,7 +613,18 @@ were generated:
 <pre><code>
 Untracked files:
     Untracked:  .DS_Store
+    Untracked:  analysis/_expression_barplot.Rmd
+    Untracked:  data/RNAseq_analysis.xlsx
+    Untracked:  data/RNAseq_analysis_gene_lists.xlsx
+    Untracked:  data/UNIQUELIST_shIFI6_vs_shIFI6.csv
+    Untracked:  data/UNIQUELIST_shIFI6_vs_shSCR.csv
     Untracked:  data/samples_info_sh1plus2_vs_scr.tsv
+    Untracked:  data/shIFI6 Day 5 vs Day 0.csv
+    Untracked:  data/shIFI6Day 3 vs shSCRDay 0.csv
+    Untracked:  data/shIFI6Day 4 vs Day 0.csv
+    Untracked:  data/shIFI6Day 4 vs shSCRDay 0.csv
+    Untracked:  data/shIFI6Day 5 vs shSCRDay 0.csv
+    Untracked:  data/shIFI6Day3 vs Day0.csv
     Untracked:  output/deg_shIFI6_Day0_vs_shSCR_Day0.tsv
     Untracked:  output/deg_shIFI6_Day1_vs_shSCR_Day0.tsv
     Untracked:  output/deg_shIFI6_Day2_vs_shSCR_Day0.tsv
@@ -595,6 +640,8 @@ Untracked files:
     Untracked:  src/h.all.v2025.1.Hs.symbols.gmt
 
 Unstaged changes:
+    Modified:   analysis/02_de_ifi6_sh1_day4.Rmd
+    Modified:   analysis/04_de_ifi6_day1_day0.Rmd
     Modified:   output/deg_shIFI6_1_Day1_vs_shSCR_Day1.tsv
     Modified:   output/deg_shIFI6_1_Day2_vs_shSCR_Day2.tsv
     Modified:   output/deg_shIFI6_1_Day3_vs_shSCR_Day3.tsv
@@ -661,6 +708,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/dimadatascience/frascolla_chemoresistance/blob/96c88b45747718fa212a55c967878c78a8888dc2/analysis/01_baseline_analysis.Rmd" target="_blank">96c88b4</a>
+</td>
+<td>
+Mariani_Gianluca_Alessio
+</td>
+<td>
+2025-09-26
+</td>
+<td>
+Added 4 average selected gene expression barplots
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/dimadatascience/frascolla_chemoresistance/11f3d4d23e682b6a7e0bc76a6bb9f47448edc128/docs/01_baseline_analysis.html" target="_blank">11f3d4d</a>
+</td>
+<td>
+Mariani_Gianluca_Alessio
+</td>
+<td>
+2025-07-16
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -893,7 +974,7 @@ variation</p></li>
 principal components, PCA provides a visual summary of the dataset’s
 structure.</p>
 <div class="plotly html-widget html-fill-item" id="htmlwidget-15145e49408dabeb5a15" style="width:960px;height:768px;"></div>
-<script type="application/json" data-for="htmlwidget-15145e49408dabeb5a15">{"x":{"visdat":{"2f2f4408abb0":["function () ","plotlyVisDat"]},"cur_data":"2f2f4408abb0","attrs":{"2f2f4408abb0":{"x":{},"y":{},"text":{},"mode":"markers","marker":{"size":10,"line":{"width":1,"color":"black"}},"color":{},"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter"}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"title":"PCA: Analysis on all samples","xaxis":{"domain":[0,1],"automargin":true,"title":"PC1 (36.5%)"},"yaxis":{"domain":[0,1],"automargin":true,"title":"PC2 (17.4%)"},"legend":{"title":{"text":"<b>condition<\/b>"}},"hovermode":"closest","showlegend":true},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":[-16.083174140783139,-17.624131877769315,-2.5884039729861947,-18.697695279256692,5.2559384473206903,3.8777066140041123,10.707983088819944,11.936822793584174,5.0309001509960893,11.982089142753969,12.850840109122039],"y":[4.9615239570900744,4.2409614720370836,-4.3881492906426729,3.5795382672988731,-7.1913766290996044,-4.0969851157385957,-3.1663052350937879,-2.2144379211814078,0.45448712580476891,8.9251884793937162,12.987470275242847],"text":["shIFI6_1_Day0_rep1","shIFI6_1_Day0_rep2","shIFI6_1_Day1_rep1","shIFI6_1_Day1_rep2","shIFI6_1_Day2_rep1","shIFI6_1_Day2_rep2","shIFI6_1_Day3_rep1","shIFI6_1_Day3_rep2","shIFI6_1_Day4_rep1","shIFI6_1_Day5_rep1","shIFI6_1_Day5_rep2"],"mode":"markers","marker":{"color":"rgba(102,194,165,1)","size":10,"line":{"color":"black","width":1}},"type":"scatter","name":"shIFI6_1","textfont":{"color":"rgba(102,194,165,1)"},"error_y":{"color":"rgba(102,194,165,1)"},"error_x":{"color":"rgba(102,194,165,1)"},"line":{"color":"rgba(102,194,165,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[-18.924812769168213,-19.34712911642551,-7.8498791723138917,-20.930319956996573,2.256561840404018,2.0745793211910151,8.1652665780401286,3.4303679756096548,2.6742663873836832,8.1109418522663201,18.760534875314232,11.600647338186279],"y":[3.0818064004298806,2.7251607207826818,-6.1595113307775318,1.9484135893996792,-12.778986622427674,-11.154804335970468,-6.6478259161803361,-8.2608734336884826,4.1854033843943652,3.5587687080326025,18.217671978320801,2.0733180418848693],"text":["shIFI6_2_Day0_rep1","shIFI6_2_Day0_rep2","shIFI6_2_Day1_rep1","shIFI6_2_Day1_rep2","shIFI6_2_Day2_rep1","shIFI6_2_Day2_rep2","shIFI6_2_Day3_rep1","shIFI6_2_Day3_rep2","shIFI6_2_Day4_rep1","shIFI6_2_Day4_rep2","shIFI6_2_Day5_rep1","shIFI6_2_Day5_rep2"],"mode":"markers","marker":{"color":"rgba(252,141,98,1)","size":10,"line":{"color":"black","width":1}},"type":"scatter","name":"shIFI6_2","textfont":{"color":"rgba(252,141,98,1)"},"error_y":{"color":"rgba(252,141,98,1)"},"error_x":{"color":"rgba(252,141,98,1)"},"line":{"color":"rgba(252,141,98,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[-19.285369217447872,-5.6491412089286976,-18.382319557444156,-17.846819104777119,10.043543298964249,8.2362230247394788,6.6030626518727908,12.377450915989247,13.237212395522871,13.996256572212374],"y":[2.8819226284776764,-6.1613786226797682,2.7517145699257632,2.6386102306665848,-9.7572561862051401,-9.0676919837053482,-1.3944966171747006,-1.4173326267998556,9.101332050171683,5.544119988011408],"text":["shSCR_Day0_rep1","shSCR_Day1_rep1","shSCR_Day1_rep2","shSCR_Day2_rep1","shSCR_Day3_rep1","shSCR_Day3_rep2","shSCR_Day4_rep1","shSCR_Day4_rep2","shSCR_Day5_rep1","shSCR_Day5_rep2"],"mode":"markers","marker":{"color":"rgba(141,160,203,1)","size":10,"line":{"color":"black","width":1}},"type":"scatter","name":"shSCR","textfont":{"color":"rgba(141,160,203,1)"},"error_y":{"color":"rgba(141,160,203,1)"},"error_x":{"color":"rgba(141,160,203,1)"},"line":{"color":"rgba(141,160,203,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-15145e49408dabeb5a15">{"x":{"visdat":{"2091dc584e3b52":["function () ","plotlyVisDat"]},"cur_data":"2091dc584e3b52","attrs":{"2091dc584e3b52":{"x":{},"y":{},"text":{},"mode":"markers","marker":{"size":10,"line":{"width":1,"color":"black"}},"color":{},"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter"}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"title":"PCA: Analysis on all samples","xaxis":{"domain":[0,1],"automargin":true,"title":"PC1 (36.5%)"},"yaxis":{"domain":[0,1],"automargin":true,"title":"PC2 (17.4%)"},"legend":{"title":{"text":"<b>condition<\/b>"}},"hovermode":"closest","showlegend":true},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":[-16.083174140783054,-17.624131877769258,-2.5884039729861708,-18.697695279256617,5.2559384473206654,3.8777066140040968,10.707983088819907,11.936822793584115,5.030900150996068,11.982089142753914,12.850840109121998],"y":[4.961523957090046,4.2409614720370756,-4.3881492906426551,3.5795382672988563,-7.1913766290995902,-4.0969851157385904,-3.1663052350937773,-2.2144379211813985,0.45448712580476625,8.9251884793936966,12.987470275242821],"text":["shIFI6_1_Day0_rep1","shIFI6_1_Day0_rep2","shIFI6_1_Day1_rep1","shIFI6_1_Day1_rep2","shIFI6_1_Day2_rep1","shIFI6_1_Day2_rep2","shIFI6_1_Day3_rep1","shIFI6_1_Day3_rep2","shIFI6_1_Day4_rep1","shIFI6_1_Day5_rep1","shIFI6_1_Day5_rep2"],"mode":"markers","marker":{"color":"rgba(102,194,165,1)","size":10,"line":{"color":"black","width":1}},"type":"scatter","name":"shIFI6_1","textfont":{"color":"rgba(102,194,165,1)"},"error_y":{"color":"rgba(102,194,165,1)"},"error_x":{"color":"rgba(102,194,165,1)"},"line":{"color":"rgba(102,194,165,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[-18.924812769168149,-19.34712911642545,-7.849879172313857,-20.930319956996499,2.2565618404040158,2.074579321191008,8.1652665780400824,3.4303679756096361,2.6742663873836743,8.1109418522662828,18.760534875314175,11.600647338186215],"y":[3.0818064004298766,2.7251607207826676,-6.159511330777514,1.9484135893996708,-12.77898662242762,-11.154804335970423,-6.6478259161803166,-8.2608734336884471,4.1854033843943403,3.55876870803259,18.217671978320752,2.0733180418848636],"text":["shIFI6_2_Day0_rep1","shIFI6_2_Day0_rep2","shIFI6_2_Day1_rep1","shIFI6_2_Day1_rep2","shIFI6_2_Day2_rep1","shIFI6_2_Day2_rep2","shIFI6_2_Day3_rep1","shIFI6_2_Day3_rep2","shIFI6_2_Day4_rep1","shIFI6_2_Day4_rep2","shIFI6_2_Day5_rep1","shIFI6_2_Day5_rep2"],"mode":"markers","marker":{"color":"rgba(252,141,98,1)","size":10,"line":{"color":"black","width":1}},"type":"scatter","name":"shIFI6_2","textfont":{"color":"rgba(252,141,98,1)"},"error_y":{"color":"rgba(252,141,98,1)"},"error_x":{"color":"rgba(252,141,98,1)"},"line":{"color":"rgba(252,141,98,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[-19.285369217447794,-5.6491412089286612,-18.382319557444092,-17.846819104777072,10.043543298964218,8.2362230247394557,6.603062651872758,12.377450915989174,13.237212395522844,13.996256572212314],"y":[2.8819226284776622,-6.1613786226797513,2.751714569925757,2.6386102306665831,-9.7572561862051188,-9.0676919837053198,-1.3944966171746993,-1.4173326267998525,9.1013320501716581,5.5441199880113894],"text":["shSCR_Day0_rep1","shSCR_Day1_rep1","shSCR_Day1_rep2","shSCR_Day2_rep1","shSCR_Day3_rep1","shSCR_Day3_rep2","shSCR_Day4_rep1","shSCR_Day4_rep2","shSCR_Day5_rep1","shSCR_Day5_rep2"],"mode":"markers","marker":{"color":"rgba(141,160,203,1)","size":10,"line":{"color":"black","width":1}},"type":"scatter","name":"shSCR","textfont":{"color":"rgba(141,160,203,1)"},"error_y":{"color":"rgba(141,160,203,1)"},"error_x":{"color":"rgba(141,160,203,1)"},"line":{"color":"rgba(141,160,203,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
 <div id="interpretation-pca-analysis-and-evaluation-of-batch-effect"
 class="section level3" style="color:red;">
 <h3>Interpretation PCA Analysis and evaluation of batch effect</h3>
@@ -1198,6 +1279,38 @@ Yinxiu Zhan
 </div>
 </div>
 </div>
+<div id="average-expression-across-all-samples" class="section level3">
+<h3>Average Expression across all samples</h3>
+<p>Below we present the distributions of the selected genes expression
+across conditions in a barplot where the height of each bar represents
+the average expression of all the selected genes in that particular
+condition. Each condition includes all the available replicates except
+those already filtered.</p>
+<div id="average-expression-raw-counts-gene-list-shifi6_vs_shifi6"
+class="section level4">
+<h4>Average Expression, Raw counts, gene list: shIFI6_vs_shIFI6</h4>
+<p><img src="figure/01_baseline_analysis.Rmd/barplot1-1.png" width="960" style="display: block; margin: auto;" /></p>
+</div>
+<div id="average-expression-raw-counts-gene-list-shifi6_vs_shscr"
+class="section level4">
+<h4>Average Expression, Raw counts, gene list: shIFI6_vs_shSCR</h4>
+<p><img src="figure/01_baseline_analysis.Rmd/barplot2-1.png" width="960" style="display: block; margin: auto;" /></p>
+</div>
+<div
+id="average-expression-vst-normalized-counts-gene-list-shifi6_vs_shifi6"
+class="section level4">
+<h4>Average Expression, VST normalized counts, gene list:
+shIFI6_vs_shIFI6</h4>
+<p><img src="figure/01_baseline_analysis.Rmd/barplot3-1.png" width="960" style="display: block; margin: auto;" /></p>
+</div>
+<div
+id="average-expression-vst-normalized-counts-gene-list-shifi6_vs_shscr"
+class="section level4">
+<h4>Average Expression, VST normalized counts, gene list:
+shIFI6_vs_shSCR</h4>
+<p><img src="figure/01_baseline_analysis.Rmd/barplot4-1.png" width="960" style="display: block; margin: auto;" /></p>
+</div>
+</div>
 </div>
 <div id="differential-expression-analysis" class="section level2">
 <h2>Differential expression analysis</h2>
@@ -1235,71 +1348,73 @@ attached base packages:
 
 other attached packages:
  [1] ReactomePA_1.53.0           tibble_3.3.0               
- [3] limma_3.65.1                gridExtra_2.3              
+ [3] limma_3.64.3                gridExtra_2.3              
  [5] WGCNA_1.73                  fastcluster_1.3.0          
  [7] dynamicTreeCut_1.63-1       dplyr_1.1.4                
- [9] clusterProfiler_4.17.0      reshape_0.8.10             
+ [9] clusterProfiler_4.16.0      reshape_0.8.10             
 [11] gplots_3.2.0                RColorBrewer_1.1-3         
-[13] rtracklayer_1.69.0          DESeq2_1.49.1              
-[15] SummarizedExperiment_1.39.0 Biobase_2.69.0             
-[17] MatrixGenerics_1.21.0       matrixStats_1.5.0          
-[19] GenomicRanges_1.61.0        GenomeInfoDb_1.45.4        
-[21] IRanges_2.43.0              S4Vectors_0.47.0           
-[23] BiocGenerics_0.55.0         generics_0.1.4             
+[13] rtracklayer_1.68.0          DESeq2_1.48.2              
+[15] SummarizedExperiment_1.38.1 Biobase_2.68.0             
+[17] MatrixGenerics_1.20.0       matrixStats_1.5.0          
+[19] GenomicRanges_1.60.0        GenomeInfoDb_1.44.3        
+[21] IRanges_2.42.0              S4Vectors_0.46.0           
+[23] BiocGenerics_0.54.0         generics_0.1.4             
 [25] reshape2_1.4.4              git2r_0.36.2               
-[27] DT_0.33                     ComplexHeatmap_2.25.0      
-[29] plotly_4.10.4               ggplot2_3.5.2              
+[27] DT_0.34.0                   ComplexHeatmap_2.24.1      
+[29] plotly_4.11.0               ggplot2_4.0.0              
 
 loaded via a namespace (and not attached):
-  [1] splines_4.5.0            later_1.4.2              BiocIO_1.19.0           
-  [4] bitops_1.0-9             ggplotify_0.1.2          R.oo_1.27.1             
-  [7] polyclip_1.10-7          preprocessCore_1.71.0    graph_1.87.0            
- [10] XML_3.99-0.18            rpart_4.1.24             lifecycle_1.0.4         
- [13] doParallel_1.0.17        rprojroot_2.0.4          MASS_7.3-65             
- [16] lattice_0.22-7           crosstalk_1.2.1          backports_1.5.0         
- [19] magrittr_2.0.3           Hmisc_5.2-3              sass_0.4.10             
+  [1] splines_4.5.0            later_1.4.4              BiocIO_1.18.0           
+  [4] bitops_1.0-9             ggplotify_0.1.3          R.oo_1.27.1             
+  [7] polyclip_1.10-7          preprocessCore_1.70.0    graph_1.87.0            
+ [10] rpart_4.1.24             XML_3.99-0.19            lifecycle_1.0.4         
+ [13] doParallel_1.0.17        rprojroot_2.1.1          MASS_7.3-65             
+ [16] lattice_0.22-7           crosstalk_1.2.2          backports_1.5.0         
+ [19] magrittr_2.0.4           Hmisc_5.2-3              sass_0.4.10             
  [22] rmarkdown_2.29           jquerylib_0.1.4          yaml_2.3.10             
- [25] httpuv_1.6.16            ggtangle_0.0.6           cowplot_1.1.3           
- [28] DBI_1.2.3                abind_1.4-8              purrr_1.0.4             
- [31] R.utils_2.13.0           ggraph_2.2.1             RCurl_1.98-1.17         
- [34] yulab.utils_0.2.0        nnet_7.3-20              rappdirs_0.3.3          
- [37] tweenr_2.0.3             circlize_0.4.16          enrichplot_1.29.1       
- [40] ggrepel_0.9.6            tidytree_0.4.6           reactome.db_1.92.0      
- [43] codetools_0.2-20         DelayedArray_0.35.1      ggforce_0.5.0           
- [46] DOSE_4.3.0               tidyselect_1.2.1         shape_1.4.6.1           
- [49] aplot_0.2.5              UCSC.utils_1.5.0         farver_2.1.2            
- [52] viridis_0.6.5            base64enc_0.1-3          GenomicAlignments_1.45.0
- [55] jsonlite_2.0.0           GetoptLong_1.0.5         tidygraph_1.3.1         
- [58] Formula_1.2-5            survival_3.8-3           iterators_1.0.14        
- [61] foreach_1.5.2            tools_4.5.0              treeio_1.33.0           
- [64] Rcpp_1.0.14              glue_1.8.0               SparseArray_1.9.0       
- [67] xfun_0.52                qvalue_2.41.0            withr_3.0.2             
- [70] fastmap_1.2.0            caTools_1.18.3           digest_0.6.37           
- [73] R6_2.6.1                 gridGraphics_0.5-1       colorspace_2.1-1        
- [76] GO.db_3.21.0             gtools_3.9.5             RSQLite_2.4.0           
- [79] R.methodsS3_1.8.2        tidyr_1.3.1              data.table_1.17.6       
- [82] graphlayouts_1.2.2       httr_1.4.7               htmlwidgets_1.6.4       
- [85] S4Arrays_1.9.1           graphite_1.55.0          whisker_0.4.1           
- [88] pkgconfig_2.0.3          gtable_0.3.6             blob_1.2.4              
- [91] impute_1.83.0            workflowr_1.7.1          XVector_0.49.0          
- [94] htmltools_0.5.8.1        fgsea_1.35.0             clue_0.3-66             
- [97] scales_1.4.0             png_0.1-8                ggfun_0.1.8             
-[100] knitr_1.50               rstudioapi_0.17.1        rjson_0.2.23            
-[103] checkmate_2.3.2          nlme_3.1-168             curl_6.4.0              
-[106] cachem_1.1.0             GlobalOptions_0.1.2      stringr_1.5.1           
-[109] KernSmooth_2.23-26       parallel_4.5.0           foreign_0.8-90          
-[112] AnnotationDbi_1.71.0     restfulr_0.0.15          pillar_1.10.2           
-[115] vctrs_0.6.5              promises_1.3.3           cluster_2.1.8.1         
-[118] htmlTable_2.4.3          evaluate_1.0.4           cli_3.6.5               
-[121] locfit_1.5-9.12          compiler_4.5.0           Rsamtools_2.25.0        
-[124] rlang_1.1.6              crayon_1.5.3             labeling_0.4.3          
-[127] plyr_1.8.9               fs_1.6.6                 stringi_1.8.7           
-[130] viridisLite_0.4.2        BiocParallel_1.42.1      Biostrings_2.77.1       
-[133] lazyeval_0.2.2           GOSemSim_2.35.0          Matrix_1.7-3            
-[136] patchwork_1.3.0          bit64_4.6.0-1            statmod_1.5.0           
-[139] KEGGREST_1.49.0          igraph_2.1.4             memoise_2.0.1           
-[142] bslib_0.9.0              ggtree_3.17.0            fastmatch_1.1-6         
-[145] bit_4.6.0                ape_5.8-1                gson_0.1.0              </code></pre>
+ [25] httpuv_1.6.16            ggtangle_0.0.7           cowplot_1.2.0           
+ [28] DBI_1.2.3                abind_1.4-8              purrr_1.1.0             
+ [31] R.utils_2.13.0           ggraph_2.2.2             RCurl_1.98-1.17         
+ [34] yulab.utils_0.2.1        nnet_7.3-20              tweenr_2.0.3            
+ [37] rappdirs_0.3.3           circlize_0.4.16          GenomeInfoDbData_1.2.14 
+ [40] enrichplot_1.28.4        ggrepel_0.9.6            tidytree_0.4.6          
+ [43] reactome.db_1.92.0       codetools_0.2-20         DelayedArray_0.34.1     
+ [46] ggforce_0.5.0            DOSE_4.2.0               tidyselect_1.2.1        
+ [49] shape_1.4.6.1            aplot_0.2.9              UCSC.utils_1.4.0        
+ [52] farver_2.1.2             viridis_0.6.5            base64enc_0.1-3         
+ [55] GenomicAlignments_1.44.0 jsonlite_2.0.0           GetoptLong_1.0.5        
+ [58] tidygraph_1.3.1          Formula_1.2-5            survival_3.8-3          
+ [61] iterators_1.0.14         foreach_1.5.2            tools_4.5.0             
+ [64] treeio_1.32.0            Rcpp_1.1.0               glue_1.8.0              
+ [67] SparseArray_1.8.1        xfun_0.53                qvalue_2.40.0           
+ [70] withr_3.0.2              fastmap_1.2.0            caTools_1.18.3          
+ [73] digest_0.6.37            R6_2.6.1                 gridGraphics_0.5-1      
+ [76] colorspace_2.1-2         Cairo_1.6-5              GO.db_3.21.0            
+ [79] gtools_3.9.5             dichromat_2.0-0.1        RSQLite_2.4.3           
+ [82] R.methodsS3_1.8.2        tidyr_1.3.1              data.table_1.17.8       
+ [85] graphlayouts_1.2.2       httr_1.4.7               htmlwidgets_1.6.4       
+ [88] S4Arrays_1.8.1           graphite_1.55.0          whisker_0.4.1           
+ [91] pkgconfig_2.0.3          gtable_0.3.6             blob_1.2.4              
+ [94] impute_1.82.0            workflowr_1.7.2          S7_0.2.0                
+ [97] XVector_0.48.0           htmltools_0.5.8.1        fgsea_1.34.2            
+[100] clue_0.3-66              scales_1.4.0             png_0.1-8               
+[103] ggfun_0.2.0              knitr_1.50               rstudioapi_0.17.1       
+[106] rjson_0.2.23             checkmate_2.3.3          nlme_3.1-168            
+[109] curl_7.0.0               cachem_1.1.0             GlobalOptions_0.1.2     
+[112] stringr_1.5.2            KernSmooth_2.23-26       parallel_4.5.0          
+[115] foreign_0.8-90           AnnotationDbi_1.70.0     restfulr_0.0.16         
+[118] pillar_1.11.1            vctrs_0.6.5              promises_1.3.3          
+[121] cluster_2.1.8.1          htmlTable_2.4.3          evaluate_1.0.5          
+[124] magick_2.9.0             cli_3.6.5                locfit_1.5-9.12         
+[127] compiler_4.5.0           Rsamtools_2.24.1         rlang_1.1.6             
+[130] crayon_1.5.3             labeling_0.4.3           plyr_1.8.9              
+[133] fs_1.6.6                 stringi_1.8.7            viridisLite_0.4.2       
+[136] BiocParallel_1.42.2      Biostrings_2.76.0        lazyeval_0.2.2          
+[139] GOSemSim_2.34.0          Matrix_1.7-4             patchwork_1.3.2         
+[142] bit64_4.6.0-1            statmod_1.5.0            KEGGREST_1.48.1         
+[145] igraph_2.1.4             memoise_2.0.1            bslib_0.9.0             
+[148] ggtree_3.16.3            fastmatch_1.1-6          bit_4.6.0               
+[151] ape_5.8-1                gson_0.1.0              </code></pre>
 </div>
 </div>
 </div>
