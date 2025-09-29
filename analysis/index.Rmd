@@ -65,3 +65,5 @@ This  website contains RNAseq data analyses for the chemoresistance project.
 - [IFI6 day3 vs SCR day0](06_de_ifi6_day3_scr_day0.html)<span class="label btn-warning">new report</span>
 - [IFI6 day4 vs SCR day0](06_de_ifi6_day4_scr_day0.html)<span class="label btn-warning">new report</span>
 - [IFI6 day5 vs SCR day0](06_de_ifi6_day5_scr_day0.html)<span class="label btn-warning">new report</span>
+
+- [IFI6 day0 vs SCR day4](06_de_ifi6_day0_scr_day4.html)<span class="label btn-warning">new report</span>
