@@ -579,7 +579,7 @@ ggplot(ifi6, aes(x = group, y = expression)) +
   )
 ```
 
-### Average Expression across all samples
+## Average Expression across all samples
 
 Below we present the distributions of the selected genes expression across conditions in a barplot where the height of each bar represents the average expression of all the selected genes in that particular condition. Each condition includes all the available replicates except those already filtered. 
 
@@ -591,7 +591,7 @@ counts_matrix <- assay(dds, "counts")  # raw counts
 vst_matrix <- assay(dds, "vst") 
 ```
 
-#### Average Expression, Raw counts, gene list: shIFI6_vs_shIFI6
+### Average Expression, Raw counts, gene list: shIFI6_vs_shIFI6
 
 ```{r barplot1}
 count_matrix_subset1 <- counts_matrix[rownames(counts_matrix) %in% list1, ]
@@ -617,7 +617,7 @@ ggplot(df, aes(x = sample, y = mean_expression)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-#### Average Expression, Raw counts, gene list: shIFI6_vs_shSCR
+### Average Expression, Raw counts, gene list: shIFI6_vs_shSCR
 
 ```{r barplot2}
 count_matrix_subset2 <- counts_matrix[rownames(counts_matrix) %in% list2, ]
@@ -643,7 +643,7 @@ ggplot(df, aes(x = sample, y = mean_expression)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-#### Average Expression, VST normalized counts, gene list: shIFI6_vs_shIFI6
+### Average Expression, VST normalized counts, gene list: shIFI6_vs_shIFI6
 
 ```{r barplot3}
 vst_matrix_subset1 <- vst_matrix[rownames(vst_matrix) %in% list1, ]
@@ -669,7 +669,7 @@ ggplot(df, aes(x = sample, y = mean_expression)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-#### Average Expression, VST normalized counts, gene list: shIFI6_vs_shSCR
+### Average Expression, VST normalized counts, gene list: shIFI6_vs_shSCR
 
 ```{r barplot4}
 vst_matrix_subset2 <- vst_matrix[rownames(vst_matrix) %in% list2, ]

@@ -18,6 +18,9 @@ params:
   logfc: 1
   gsea_terms: 15
   qvalue: 0.05
+  gsea_pval2filter_GO: 0.05
+  gsea_pval2filter_HALLMARK: 0.05
+  path_option: ""
   top_n_genes_used4ora: 1000
   gene_name_type: "symbol"
   sample_info_file: "./data/samples_info_scr_vs_sh.tsv"
@@ -398,6 +401,7 @@ genet_A <- my_genetable(
   title_1vs2 = vs_descr, 
   qvalue = qvalue, 
   logfc = logfc,
+  path_option = params$path_option
 )
 allgenesA <- genet_A[["res"]]
 deg_A <- genet_A[["deg"]]
@@ -486,7 +490,7 @@ ontologies <- list(
   MF = "Molecular Functions"
 )
 
-pvalueCutoff <- 0.05
+pvalueCutoff <- params$gsea_pval2filter_GO
 gseaA_list <- list()
 chunk_heights <- numeric()
 
@@ -505,7 +509,7 @@ if (na.omit(nrow(gseaA_list[["BP"]]@result)) > 0) {
           facet_grid(. ~ .sign) + 
           ggtitle(paste("Biological Processes enrichment")))
   DT::datatable(
-    gseaA_list[["BP"]]@result[, c("p.adjust", "Description", "core_enrichment")],
+    gseaA_list[["BP"]]@result[, c("p.adjust", "enrichmentScore", "NES", "Description", "core_enrichment")],
     extensions = 'Buttons',
     options = list(
       dom = 'Blfrtip',
@@ -527,7 +531,7 @@ if (na.omit(nrow(gseaA_list[["CC"]]@result)) > 0) {
           facet_grid(. ~ .sign) + 
           ggtitle(paste("Cellular Components enrichment")))
   DT::datatable(
-    gseaA_list[["CC"]]@result[, c("p.adjust", "Description", "core_enrichment")],
+    gseaA_list[["CC"]]@result[, c("p.adjust", "enrichmentScore", "NES", "Description", "core_enrichment")],
     extensions = 'Buttons',
     options = list(
       dom = 'Blfrtip',
@@ -549,7 +553,7 @@ if (na.omit(nrow(gseaA_list[["MF"]]@result)) > 0) {
           facet_grid(. ~ .sign) + 
           ggtitle(paste("Molecular Functions enrichment")))
   DT::datatable(
-    gseaA_list[["MF"]]@result[, c("p.adjust", "Description", "core_enrichment")],
+    gseaA_list[["MF"]]@result[, c("p.adjust", "enrichmentScore", "NES", "Description", "core_enrichment")],
     extensions = 'Buttons',
     options = list(
       dom = 'Blfrtip',
@@ -575,7 +579,7 @@ Additionally, the color of each dot indicates the significance of the pathway’
 genelist_A <- res_A$log2FoldChange
 names(genelist_A) <- res_A$gene
 
-pvalueCutoff <- 0.05
+pvalueCutoff <- params$gsea_pval2filter_HALLMARK
 # gseaA_list <- list()
 # chunk_heights <- numeric()
 
@@ -592,7 +596,7 @@ if (nrow(na.omit(gsea_result@result)) > 0) {
   print(dotplot(gsea_result, showCategory = params$gsea_terms) + 
           ggtitle("Hallmark gene sets enrichment"))
   DT::datatable(
-    gsea_result@result[, c("p.adjust", "Description", "core_enrichment")],
+    gsea_result@result[, c("p.adjust", "enrichmentScore", "NES", "Description", "core_enrichment")],
     extensions = 'Buttons',
     options = list(
       dom = 'Blfrtip',
