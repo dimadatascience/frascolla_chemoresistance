@@ -302,7 +302,7 @@ class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2025-07-16
+<strong>Last updated:</strong> 2025-09-29
 </p>
 <p>
 <strong>Checks:</strong> <span
@@ -320,7 +320,7 @@ title="This is the local directory in which the code in this file was executed."
 This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
 analysis was created with <a
   href="https://github.com/workflowr/workflowr">workflowr</a> (version
-1.7.1). The <em>Checks</em> tab describes the reproducibility checks
+1.7.2). The <em>Checks</em> tab describes the reproducibility checks
 that were applied when the results were created. The <em>Past
 versions</em> tab lists the development history.
 </p>
@@ -349,15 +349,15 @@ results.</p>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomdimadatasciencefrascollachemoresistancetree4110172b272b911c7a9112b647dd702b421e24b5targetblank4110172a">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomdimadatasciencefrascollachemoresistancetreef0b58f65e4d878a043a095e0c55ce47849a43da0targetblankf0b58f6a">
 <span class="glyphicon glyphicon-ok text-success"
 aria-hidden="true"></span> <strong>Repository version:</strong>
-<a href="https://github.com/dimadatascience/frascolla_chemoresistance/tree/4110172b272b911c7a9112b647dd702b421e24b5" target="_blank">4110172</a>
+<a href="https://github.com/dimadatascience/frascolla_chemoresistance/tree/f0b58f65e4d878a043a095e0c55ce47849a43da0" target="_blank">f0b58f6</a>
 </a>
 </p>
 </div>
 <div
-id="strongRepositoryversionstrongahrefhttpsgithubcomdimadatasciencefrascollachemoresistancetree4110172b272b911c7a9112b647dd702b421e24b5targetblank4110172a"
+id="strongRepositoryversionstrongahrefhttpsgithubcomdimadatasciencefrascollachemoresistancetreef0b58f65e4d878a043a095e0c55ce47849a43da0targetblankf0b58f6a"
 class="panel-collapse collapse">
 <div class="panel-body">
 <p>
@@ -367,7 +367,7 @@ reproducibility.
 </p>
 <p>
 The results in this page were generated with repository version
-<a href="https://github.com/dimadatascience/frascolla_chemoresistance/tree/4110172b272b911c7a9112b647dd702b421e24b5" target="_blank">4110172</a>.
+<a href="https://github.com/dimadatascience/frascolla_chemoresistance/tree/f0b58f65e4d878a043a095e0c55ce47849a43da0" target="_blank">f0b58f6</a>.
 See the <em>Past versions</em> tab to see a history of the changes made
 to the R Markdown and HTML files.
 </p>
@@ -383,8 +383,20 @@ were generated:
 <pre><code>
 Untracked files:
     Untracked:  .DS_Store
+    Untracked:  analysis/_expression_barplot.Rmd
+    Untracked:  data/RNAseq_analysis.xlsx
+    Untracked:  data/RNAseq_analysis_gene_lists.xlsx
+    Untracked:  data/UNIQUELIST_shIFI6_vs_shIFI6.csv
+    Untracked:  data/UNIQUELIST_shIFI6_vs_shSCR.csv
     Untracked:  data/samples_info_sh1plus2_vs_scr.tsv
+    Untracked:  data/shIFI6 Day 5 vs Day 0.csv
+    Untracked:  data/shIFI6Day 3 vs shSCRDay 0.csv
+    Untracked:  data/shIFI6Day 4 vs Day 0.csv
+    Untracked:  data/shIFI6Day 4 vs shSCRDay 0.csv
+    Untracked:  data/shIFI6Day 5 vs shSCRDay 0.csv
+    Untracked:  data/shIFI6Day3 vs Day0.csv
     Untracked:  output/deg_shIFI6_Day0_vs_shSCR_Day0.tsv
+    Untracked:  output/deg_shIFI6_Day0_vs_shSCR_Day4.tsv
     Untracked:  output/deg_shIFI6_Day1_vs_shSCR_Day0.tsv
     Untracked:  output/deg_shIFI6_Day2_vs_shSCR_Day0.tsv
     Untracked:  output/deg_shIFI6_Day3_vs_shSCR_Day0.tsv
@@ -419,6 +431,7 @@ Unstaged changes:
     Modified:   output/deg_shIFI6_Day4_vs_shSCR_Day4.tsv
     Modified:   output/deg_shIFI6_Day5_vs_shIFI6_Day0.tsv
     Modified:   output/deg_shIFI6_Day5_vs_shSCR_Day5.tsv
+    Modified:   output/deg_shSCR_Day1_vs_shSCR_Day0.tsv
     Modified:   output/deg_shSCR_Day5_vs_shSCR_Day0.tsv
     Modified:   src/__utils_rna_seq_functions.R
 
@@ -464,6 +477,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/dimadatascience/frascolla_chemoresistance/blob/f0b58f65e4d878a043a095e0c55ce47849a43da0/analysis/index.Rmd" target="_blank">f0b58f6</a>
+</td>
+<td>
+Mariani_Gianluca_Alessio
+</td>
+<td>
+2025-09-29
+</td>
+<td>
+Added IFI6 day 0 vs SCR day 4 and updated index
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/dimadatascience/frascolla_chemoresistance/11f3d4d23e682b6a7e0bc76a6bb9f47448edc128/docs/index.html" target="_blank">11f3d4d</a>
+</td>
+<td>
+Mariani_Gianluca_Alessio
+</td>
+<td>
+2025-07-16
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -676,18 +723,20 @@ class="label btn-warning">new report</span></li>
 <div id="pooled-shrna-vs-scramble-at-day-0" class="section level2">
 <h2>pooled shRNA vs scramble at day 0</h2>
 <ul>
-<li><a href="06_de_ifi6_day0_scr_day0.html">IFI6 day0 vs SCR
-day0</a><span class="label btn-warning">new report</span></li>
-<li><a href="06_de_ifi6_day1_scr_day0.html">IFI6 day1 vs SCR
-day0</a><span class="label btn-warning">new report</span></li>
-<li><a href="06_de_ifi6_day2_scr_day0.html">IFI6 day2 vs SCR
-day0</a><span class="label btn-warning">new report</span></li>
-<li><a href="06_de_ifi6_day3_scr_day0.html">IFI6 day3 vs SCR
-day0</a><span class="label btn-warning">new report</span></li>
-<li><a href="06_de_ifi6_day4_scr_day0.html">IFI6 day4 vs SCR
-day0</a><span class="label btn-warning">new report</span></li>
-<li><a href="06_de_ifi6_day5_scr_day0.html">IFI6 day5 vs SCR
-day0</a><span class="label btn-warning">new report</span></li>
+<li><p><a href="06_de_ifi6_day0_scr_day0.html">IFI6 day0 vs SCR
+day0</a><span class="label btn-warning">new report</span></p></li>
+<li><p><a href="06_de_ifi6_day1_scr_day0.html">IFI6 day1 vs SCR
+day0</a><span class="label btn-warning">new report</span></p></li>
+<li><p><a href="06_de_ifi6_day2_scr_day0.html">IFI6 day2 vs SCR
+day0</a><span class="label btn-warning">new report</span></p></li>
+<li><p><a href="06_de_ifi6_day3_scr_day0.html">IFI6 day3 vs SCR
+day0</a><span class="label btn-warning">new report</span></p></li>
+<li><p><a href="06_de_ifi6_day4_scr_day0.html">IFI6 day4 vs SCR
+day0</a><span class="label btn-warning">new report</span></p></li>
+<li><p><a href="06_de_ifi6_day5_scr_day0.html">IFI6 day5 vs SCR
+day0</a><span class="label btn-warning">new report</span></p></li>
+<li><p><a href="06_de_ifi6_day0_scr_day4.html">IFI6 day0 vs SCR
+day4</a><span class="label btn-warning">new report</span></p></li>
 </ul>
 </div>
 </div>
