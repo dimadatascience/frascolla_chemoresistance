@@ -113,65 +113,30 @@ expA <- params$exp$condition
 contrA <- params$contr$condition
 vs_descr <- paste(params$exp$description, " vs ", params$contr$description)
 
-for (grp in levels(sample_info$sample_group)) {
-  group_samples <- subset(sample_info, sample_group == grp)
-  
-  # separate samples
-  
-  ctrl_samples <- subset(group_samples, sample_type %in% c("c", "tc", "control"))
-  exp_samples_full <- group_samples[!(group_samples$sample_type %in% ctrl_samples$sample_type), ]
-  comparison = 0
-  if (nrow(exp_samples_full) > 0 && nrow(ctrl_samples) > 0) {
-    for(treatment in unique(exp_samples_full$sample_type)){
-      exp_samples = exp_samples_full[exp_samples_full$sample_type == treatment, ]
-      # set sample names
-      exp_sample_names <- rownames(exp_samples)
-      ctrl_sample_names <- rownames(ctrl_samples)
-      
-      # set sample conditions
-      exp_conditions <- unique(exp_samples$condition_description)
-      ctrl_conditions <- unique(ctrl_samples$condition_description)
-      
-      # join conditions into strings
-      exp_conditions_text <- paste(exp_conditions, collapse = ", ")
-      ctrl_conditions_text <- paste(ctrl_conditions, collapse = ", ")
-      
-      deseq_groups[[paste0("group_", as.character(grp), "_set_", as.character(comparison))]] <- list(
-        group_id = grp,
-        experimental = exp_sample_names,
-        control = ctrl_sample_names,
-        exp_condition = exp_conditions_text,
-        ctrl_condition = ctrl_conditions_text
-      )
-      comparison = comparison + 1
-    }
-  } else {
-    warning(paste("The group", grp, "does not have a valid comparison (exp + ctrl)"))
-  }
-}
+# filtra campioni sperimentali
+exp_samples <- subset(sample_info, condition == expA & !(grepl("^(c|tc|control)[0-9]*$", sample_type)))
 
-selected_group_name <- NULL
+# filtra campioni controllo
+ctrl_samples <- subset(sample_info, condition == contrA & grepl("^(c|tc|control)[0-9]*$", sample_type))
 
-for (grp_name in names(deseq_groups)) {
-  grp <- deseq_groups[[grp_name]]
-  
-  # check if at least 1 sample has the experimental tag
-  has_exp_tag <- any(sample_info[grp$experimental, "condition"] == expA)
-  # check if at least 1 sample has the control tag
-  has_contr_tag <- any(sample_info[grp$control, "condition"] == contrA)
-  
-  if (has_exp_tag && has_contr_tag) {
-    selected_group_name <- grp_name
-    break
-  }
-}
+# estrai nomi dei campioni (rownames)
+exp_sample_names <- rownames(exp_samples)
+ctrl_sample_names <- rownames(ctrl_samples)
 
-if (is.null(selected_group_name)) {
+# crea lista di confronto
+deseq_group <- list(
+  experimental = exp_sample_names,
+  control = ctrl_sample_names,
+  exp_conditions_text = unique(sample_info$condition_description[sample_info$condition == expA]),
+  ctrl_conditions_text = unique(sample_info$condition_description[sample_info$condition == contrA])
+)
+
+if (is.null(deseq_group)) {
   stop("⚠️ No valid group for comparison ", expA, " vs ", contrA)
 }
 
 # use selected group for downstream analysis
-selected_group <- deseq_groups[[selected_group_name]]
+selected_group <- deseq_group
 ```
 
 ```{r load_data_deseq, results="asis"}
