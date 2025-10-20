@@ -10,14 +10,23 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 author: "Gianluca Alessio Mariani"
 
 params:
-  sample_info_file: "./data/samples_info.tsv"
-  # sample_info_file: "./data/samples_info_test_multbatch.tsv"
+  sample_info_file: "./data/sample_list_variables.csv"
   utils_file: "./src/__utils_rna_seq_functions.R"
   dds_file: "./data/deseq2.dds.RData"
   ribosomal_genes_file: "./src/genes2filter_symbol.csv"
   min_sample: 10
-  # logfc: 1
-  # qvalue: 0.05
+  logfc: 1
+  qvalue: 0.05
+  genelists: 
+    - "./data/251015_genelist_frascolla.csv"
+  gene_name_type: "SYMBOL"
+  design_vars: "base_condition"
+  contrast_variable: "base_condition"
+  e_var_tag: 
+    - "shIFI6_1"
+    - "shIFI6_2"
+  c_var_tag: 
+    - "shSCR"
 ---
 
 ```{r}
@@ -62,6 +71,8 @@ if (!require("DT")) install.packages('DT')
 if (!require("git2r")) install.packages("git2r")
 if (!require("reshape2")) install.packages("reshape2")
 
+library(stringr)
+library(glue)
 library("DESeq2")
 library(rtracklayer)
 library(ComplexHeatmap)
@@ -73,12 +84,15 @@ library(reshape)
 library(plotly)
 library(clusterProfiler)
 library(dplyr)
+library(tidyr)
 library(WGCNA)
 library(gridExtra)
 library("git2r")
 library(limma)
 library(tibble)
-# #library(CorLevelPlot)
+library(AnnotationDbi)
+library("org.Hs.eg.db")
+library(msigdbr)
 library(ReactomePA)
 ```
 
@@ -90,29 +104,25 @@ Each sample is described by:
 
   - sample: sample name defined a priori in the previous step of RNA seq analysis
 
-  - sample_description: a descriptive version of the sample name to improve clarity in the presentation of data
+  - condition_single: list of samples divided into groups based on the base condition and the time
+  
+  - condition_pooled: list of samples divided into groups based on the base condition and the time and grouping together the samples from the two shIFI6 conditions
 
-  - batch: the experimental batch of each sample
-
-  - condition: the treatment condition (control, knockdown, treated, etc...)
-
-  - condition_description: a descriptive version of the condition to improve clarity in the presentation of data
+  - base_condition: the baseline condition (control, knockdown, treated, etc...) irrespective of any other experimental variable/parameter
   
   - time: day after treatment
 
 ```{r load_samples, results="asis"}
 
 # Get information
-sample_info <- read.table(params$sample_info_file, header = TRUE, sep = "\t")
+sample_info <- read.csv(params$sample_info_file, header = TRUE)
 rownames(sample_info) <- sample_info$sample
 
 # Convert to factors
 sample_info[] <- lapply(sample_info, as.factor)
 
-clean_sample_info <- sample_info[, !(colnames(sample_info) %in% c("sample_type", "sample_group"))]
-
 datatable(
-   clean_sample_info,
+   sample_info,
    extensions = 'Buttons',   
    options = list(     
         dom = 'Blfrtip',     
@@ -121,85 +131,6 @@ datatable(
         c(10, 25, 50, "All"))   
         ),   
     rownames = FALSE )
-```
-
-```{r sample_grouping, results="asis"}
-deseq_groups <- list()
-
-for (grp in levels(sample_info$sample_group)) {
-  group_samples <- subset(sample_info, sample_group == grp)
-
-  # get control and treatment samples
-  ctrl_samples <- subset(group_samples, sample_type %in% c("c", "tc", "control", "wt", "wild-type", "wildtype"))
-  exp_samples_full <- group_samples[!(group_samples$sample_type %in% ctrl_samples$sample_type), ]
-  comparison = 0
-  if (nrow(exp_samples_full) > 0 && nrow(ctrl_samples) > 0) {
-    
-    # given one control, there might be multiple associated treatments
-    for(treatment in as.vector(unique(exp_samples_full$sample_type))){
-      exp_samples = exp_samples_full[exp_samples_full$sample_type == treatment, ]
-      
-      exp_sample_names <- rownames(exp_samples)
-      ctrl_sample_names <- rownames(ctrl_samples)
-
-      exp_conditions <- unique(exp_samples$condition_description)
-      ctrl_conditions <- unique(ctrl_samples$condition_description)
-
-      exp_conditions_text <- paste(exp_conditions, collapse = ", ")
-      ctrl_conditions_text <- paste(ctrl_conditions, collapse = ", ")
-
-      deseq_groups[[paste0("group_", as.character(grp), "_set_", as.character(comparison))]] <- list(
-        group_id = grp,
-        experimental = exp_sample_names,
-        control = ctrl_sample_names,
-        exp_condition = exp_conditions_text,
-        ctrl_condition = ctrl_conditions_text
-      )
-      comparison = comparison + 1
-    }
-  } else {
-    warning(paste("The group", grp, "does not have a valid comparison (exp + ctrl)"))
-  }
-}
-```
-
-
-## Comparisons definition
-
-The comparisons included in the report are listed below. 
-Each comparison group includes two subsets of samples: a 'treatment' group and a control group. 
-Differential gene expression analysis is conducted by comparing the 'treatment' samples to the control samples within each group.
-
-```{r sample_grouping_text, results="asis", echo=FALSE}
-text_deseq_groups <- ""
-
-if (length(deseq_groups) > 0) {
-  
-  for (grp_name in names(deseq_groups)) {
-    grp <- deseq_groups[[grp_name]]
-    
-    # Get comparison
-    comparison_text <- paste0("(", grp$exp_condition, " vs ", grp$ctrl_condition, ")")
-    
-    text_deseq_groups <- paste0(text_deseq_groups,
-      "\n",
-      "➤ Group: ", grp_name, ", ", comparison_text, "\n",
-      "\n\t- **'Treated' samples** (", grp$exp_condition, ", e):\n",
-      paste0("\t\t", grp$experimental, collapse = "\n"), "\n",
-      "\n\t- **Control Samples** (", grp$ctrl_condition, ", c/tc):\n",
-      paste0("\t\t", grp$control, collapse = "\n"), "\n\n"
-    )
-  }
-  
-} else {
-  text_deseq_groups <- "⚠️ No valid group defined for DGE analysis.\n"
-}
-```
-
-```{r show_deseq_groups, results = "asis", echo = FALSE}
-text_html <- gsub("\n", "<br>", text_deseq_groups)
-text_html <- gsub("\t", "&nbsp;&nbsp;&nbsp;&nbsp;", text_html)
-cat(text_html)
 ```
 
 ```{r load_data_deseq, results="asis"}
@@ -221,37 +152,122 @@ sample_info <- sample_info[common_samples, ]
 # sanity check
 stopifnot(all(colnames(dds) == rownames(sample_info)))
 
-colData(dds)$sample <- sample_info$sample
-colData(dds)$sample_description <- sample_info$sample_description
-colData(dds)$condition <- sample_info$condition
-colData(dds)$condition_description <- sample_info$condition_description
+# verify alignment
+stopifnot(all(colnames(dds) == rownames(sample_info)))
 
-# possible design variables
-design_vars <- c("batch", "condition", "time")  
+# Ensure sample names are aligned
+rownames(colData(dds)) <- sample_info$sample
+dds$sample <- sample_info$sample
 
-# Remove constant
+design_vars <- c(params$design_vars)
+# check which variables are constant
 constant_vars <- check_constant_vars(sample_info, design_vars)
 if (length(constant_vars) > 0) {
-  message("Constant variable removed: ", paste(constant_vars, collapse = ", "))
+  message("Found constant variables: ", paste(constant_vars, collapse = ", "), ", removed from the design.")
 }
+
+# valid (non constant) variables
 valid_vars <- setdiff(design_vars, constant_vars)
-if (length(valid_vars) == 0) {
-  stop("No variable for design. condition column is missing or it contains a single condition.")
-}
 
 # Remove missing design variables
 missing_vars = valid_vars[!(valid_vars %in% colnames(sample_info))]
 if (length(missing_vars) > 0) {
-  message("IMPORTANT!!!! missing variable removed: ", paste(missing_vars, collapse = ", "))
+  message("IMPORTANT!!!! Passed but missing variable removed: ", paste(missing_vars, collapse = ", "))
 }
 valid_vars <- setdiff(valid_vars, missing_vars)
-if (length(valid_vars) == 0) {
-  stop("No variable for design. condition column is missing or it contains a single condition.")
-}
 
+if (length(valid_vars) == 0) {
+  stop("No suitable variable for the design. Check the data.")
+}
+# build dynamic design formula
 design_formula <- as.formula(
   paste("~", paste(valid_vars, collapse = " + "))
 )
+
+contrast_variable <- params$contrast_variable
+```
+
+```{r deseq2_allsamples}
+counts <- assay(dds)
+min_reads <- round(ncol(counts) / 2)
+min_sample <- length(unique(sample_info[[contrast_variable]]))
+
+out_deseq2 <- mydeseq2(
+  counts = counts,
+  min_reads = min_reads,
+  sample_info = sample_info,
+  min_sample = min_sample,
+  design_formula = design_formula,
+  gene_name_type = params$gene_name_type,
+  contrast_variable = params$contrast_variable
+)
+  
+genet <- my_genetable(
+  res = out_deseq2$res, 
+  title_1vs2 = "All_genes", 
+  qvalue = params$qvalue, 
+  logfc = params$logfc,
+  path_option = params$path_option
+)
+
+allgenes <- genet[["res"]]
+deg <- genet[["deg"]]
+```
+
+```{r deseq2_forupdown_inheatmaps}
+dds_heat <- DESeqDataSetFromMatrix(countData = counts,
+                              colData = sample_info,
+                              design = ~ base_condition + time)
+dds_heat <- DESeq(dds_heat)
+
+res_IFI6_1_vs_SCR <- results(dds_heat, contrast = c(contrast_variable, params$e_var_tag[[1]], params$c_var_tag[[1]]))
+res_IFI6_2_vs_SCR <- results(dds_heat, contrast = c(contrast_variable, params$e_var_tag[[2]], params$c_var_tag[[1]]))
+
+res_IFI6_1_vs_SCR_filtered <- na.omit(res_IFI6_1_vs_SCR)
+res_IFI6_2_vs_SCR_filtered <- na.omit(res_IFI6_2_vs_SCR)
+
+# Converti in data frame per sicurezza
+df1 <- as.data.frame(res_IFI6_1_vs_SCR_filtered)
+df2 <- as.data.frame(res_IFI6_2_vs_SCR_filtered)
+
+# Aggiungi una colonna con i nomi dei geni
+df1$gene <- rownames(df1)
+df2$gene <- rownames(df2)
+
+# Generate df_combined for the heatmaps
+df1$origin <- "IFI6_1_vs_SCR"
+df2$origin <- "IFI6_2_vs_SCR"
+# Unisci i due dataframe
+df_combined <- rbind(df1, df2)
+# Ordina per gene
+df_combined <- df_combined[order(df_combined$gene), ]
+
+# Merge delle due tabelle su "gene"
+merged <- merge(df1[, c("gene", "log2FoldChange")],
+                df2[, c("gene", "log2FoldChange")],
+                by = "gene", suffixes = c("_IFI6_1_vs_SCR", "_IFI6_2_vs_SCR"))
+
+# Funzione per calcolare il log2FC combinato
+merged$log2FC_combined <- apply(merged[, c("log2FoldChange_IFI6_1_vs_SCR", "log2FoldChange_IFI6_2_vs_SCR")], 1, function(x) {
+  fc1 <- x[1]
+  fc2 <- x[2]
+  
+  # Caso 1: entrambi negativi
+  if (fc1 < 0 & fc2 < 0) {
+    return(min(fc1, fc2))  # più negativo
+  }
+  # Caso 2: entrambi positivi
+  else if (fc1 > 0 & fc2 > 0) {
+    return(max(fc1, fc2))  # più positivo
+  }
+  # Caso 3: segni diversi
+  else {
+    return(mean(c(fc1, fc2)))
+  }
+})
+
+# Ordina in base al nuovo log2FC combinato
+merged_sorted <- merged[order(merged$log2FC_combined, decreasing = TRUE), ]
 ```
 
 ## PCA Analysis
@@ -274,34 +290,24 @@ By reducing the high-dimensional gene expression data into a few principal compo
 
 ```{r PCA_all, results="asis"}
 
-counts <- assay(dds)
-min_reads <- round(ncol(counts) / 2)
-min_sample <- length(unique(sample_info$condition))
-
 out <- preprocessing_PCA(counts, 
     min_reads, 
     sample_info, 
     normalization = "vst",
     min_sample = 5, 
     design_formula = design_formula,
+    contrast_variable = params$contrast_variable
     )
 
 rld <- out[["rld"]]
 
 colData(rld)$sample <- sample_info$sample
-colData(rld)$sample_description <- sample_info$sample_description
-colData(rld)$condition <- sample_info$condition
-colData(rld)$condition_description <- sample_info$condition_description
-
-sample_names <- colnames(rld)  
-alt_labels <- colData(rld)$sample_description 
-name_map <- setNames(as.character(alt_labels), sample_names)
+colData(rld)[[params$contrast_variable]] <- sample_info[[contrast_variable]]
 
 p <- mypcaAnalysis_test(
   title_1vs2 = "Analysis on all samples", 
   rld = rld,
-  intgroup1 = "condition",
-  intgroup2 = "batch"
+  intgroup1 = "base_condition"
 )
 
 p
@@ -383,23 +389,13 @@ The Spearman correlation heatmap provides a global view of the similarity betwee
 We calculated the pairwise Spearman correlation coefficients between samples and visualized them in a heatmap.
 Rows and columns are hierarchically clustered based on these correlations to reveal patterns of similarity and potential groupings among samples.
 
-```{r heatmap_correlation, results="asis",fig.height=12, fig.width=14}
-
-# Corellation between samples
-cor_matrix <- cor(assay(rld), method = "spearman")
-colnames(cor_matrix) <- name_map[colnames(cor_matrix)]
-rownames(cor_matrix) <- name_map[rownames(cor_matrix)]
-
-# Distance matrix defined as 1-correlation
-clustering_dist <- as.dist(1 - cor_matrix)
-
-# Annotate groups
-annotation_df <- as.data.frame(colData(dds)[, "condition_description", drop = FALSE])
-colnames(annotation_df) <- "Condition"
-rownames(annotation_df) <- name_map[rownames(annotation_df)]
+```{r heatmap_metadata}
+dds_current <- out_deseq2$dds_updated
+sample_conditions <- as.data.frame(colData(dds_current)[, params$contrast_variable, drop = FALSE])
+colnames(sample_conditions) <- params$contrast_variable
 
 # Unique conditions
-conditions <- unique(as.character(colData(dds)$condition_description))
+conditions <- unique(as.character(colData(dds_current)[[params$contrast_variable]]))
 n_conditions <- length(conditions)
 
 # Color palette
@@ -414,6 +410,15 @@ if (n_conditions > length(palette_colors)) {
 annotation_colors <- list(
   Condition = setNames(palette_colors, conditions)
 )
+```
+
+```{r heatmap_correlation, results="asis",fig.height=12, fig.width=14}
+
+# Correlation between samples
+cor_matrix <- cor(assay(rld), method = "spearman")
+
+# Distance matrix defined as 1-correlation
+clustering_dist <- as.dist(1 - cor_matrix)
 ```
 
 ### **Spearman Correlation: General Interpretation**
@@ -464,13 +469,13 @@ Therefore, lower correlation values between replicates should not be interpreted
 
 Below we present the heatmap associated spearman correlation.
 
-```{r heatmap_correlation_plot, fig.width=8, fig.height=6}
+```{r heatmap_correlation_plot, fig.width=12, fig.height=12}
 
 pheatmap(
   cor_matrix,
   clustering_distance_rows = clustering_dist,
   clustering_distance_cols = clustering_dist,
-  annotation_col = annotation_df,
+  annotation_col = sample_conditions,
   annotation_colors = annotation_colors,
   main = "Sample-to-sample correlation (Spearman)",
   display_numbers = TRUE,
@@ -483,10 +488,670 @@ pheatmap(
 
 <div style="color:red;">
 
-### Interpretation Spearman Correlation Heatmap
+##### Interpretation Spearman Correlation Heatmap
 
 ongoing
 
+</div>
+
+## Gene expression Heatmaps
+
+Below, we present some heatmaps depicting the expression levels of the selected set of genes, filtered to include only those identified as differentially expressed (DEGs). 
+Consequently, the heatmap features genes from the selected list that overlap with the DEG subset. 
+Accompanying the heatmap is a table summarizing the differential expression analysis results for these genes. 
+Each gene is represented by multiple rows in the table, corresponding to the number of comparisons conducted.
+
+The genes in the heatmaps are ordered specifically to highlight the differential expression between the two considered conditions: shIFI6 and shSCR.
+This is accomplished by ordering the results of the differential gene expression between the two conditions by log2 fold change and:
+
+  - taking the highest value if the log2 fold change is positive
+  
+  - taking the lowest value if the log2 fold change is negative
+  
+  - taking the average if the log2 fold change in the two cases is one negative and one positive
+
+```{r calculate_regulation_score, results='asis'}
+gene_expression <- assay(rld)
+gene_expression_raw_counts <- dds_current@assays@data$counts
+
+expr_long <- as.data.frame(gene_expression)
+expr_long$gene <- rownames(expr_long)
+
+expr_long <- pivot_longer(expr_long, 
+                          cols = -gene,
+                          names_to = "sample", 
+                          values_to = "expression")
+
+# 2. Unisci con la tabella sample_info per aggiungere tempo e condizione
+expr_long <- left_join(expr_long, sample_info, by = "sample")
+
+# 3. Calcola la media per gene per ogni timepoint e condizione
+expr_mean <- expr_long %>%
+  group_by(gene, base_condition, time) %>%
+  summarise(mean_expr = mean(expression), .groups = "drop")
+
+# 4. Calcola la pendenza tra timepoint consecutivi per ogni gene e condizione
+expr_mean <- expr_mean %>%
+  arrange(gene, base_condition, time) %>%
+  group_by(gene, base_condition) %>%
+  mutate(slope = c(diff(mean_expr), NA)) %>%  # ultima è NA
+  ungroup()
+
+# 5. Rimuovi le righe con slope NA
+expr_slopes <- expr_mean %>% filter(!is.na(slope))
+
+# 6. Calcola i punteggi per gene
+regulation_score <- expr_slopes %>%
+  group_by(gene) %>%
+  summarise(
+    reg_score = sum(abs(slope))
+  ) %>%
+  ungroup()
+```
+
+```{r generate_4_families_genelists}
+gene_symbols <- rownames(dds)
+# gene_symbols <- gene_symbols[gene_symbols %in% rownames(gene_expression)]
+gene_df <- bitr(gene_symbols, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)
+go_annot <- AnnotationDbi::select(
+  org.Hs.eg.db,
+  keys = gene_df$ENTREZID,
+  columns = c("GO", "ONTOLOGY"),
+  keytype = "ENTREZID"
+) %>% 
+  filter(!is.na(GO))
+
+go_bp <- go_annot %>% filter(ONTOLOGY == "BP") %>%
+  group_by(ENTREZID) %>%
+  summarise(GO_BP = paste(unique(GO), collapse = "; "))
+go_mf <- go_annot %>% filter(ONTOLOGY == "MF") %>%
+  group_by(ENTREZID) %>%
+  summarise(GO_MF = paste(unique(GO), collapse = "; "))
+go_cc <- go_annot %>% filter(ONTOLOGY == "CC") %>%
+  group_by(ENTREZID) %>%
+  summarise(GO_CC = paste(unique(GO), collapse = "; "))
+
+msigdb_hallmark <- msigdbr(species = "Homo sapiens", category = "H")
+hallmark_annot <- msigdb_hallmark %>%
+  filter(entrez_gene %in% gene_df$ENTREZID) %>%
+  group_by(entrez_gene) %>%
+  summarise(HALLMARK_Pathways = paste(unique(gs_name), collapse = "; "))
+colnames(hallmark_annot)[1] <- "ENTREZID"
+
+custom_df <- gene_df %>%
+  left_join(go_bp, by = "ENTREZID") %>%
+  left_join(go_mf, by = "ENTREZID") %>%
+  left_join(go_cc, by = "ENTREZID") %>%
+  left_join(hallmark_annot, by = "ENTREZID") %>%
+  dplyr::select(SYMBOL, ENTREZID, GO_BP, GO_MF, GO_CC, HALLMARK_Pathways)
+
+# Hallmark Pathways
+hallmark_ids <- c(
+  "HALLMARK_IL2_STAT5_SIGNALING",
+  "HALLMARK_IL6_JAK_STAT3_SIGNALING",
+  "HALLMARK_INFLAMMATORY_RESPONSE",
+  "HALLMARK_INTERFERON_GAMMA_RESPONSE",
+  "HALLMARK_TNFA_SIGNALING_VIA_NFKB"
+)
+
+# GO Terms - Cytokine-Related
+go_cytokine_ids <- c(
+  "GO:0019221",
+  "GO:0001816",
+  "GO:0001818",
+  "GO:0001819",
+  "GO:0001817",
+  "GO:0034097",
+  "GO:0071345",
+  "GO:0061082",
+  "GO:0010934",
+  "GO:0010935",
+  "GO:0010936"
+)
+
+# GO Terms - Inflammation-Related
+go_inflammation_ids <- c(
+  "GO:0006954",
+  "GO:0002526",
+  "GO:0002438",
+  "GO:0002675",
+  "GO:0050729",
+  "GO:0050727"
+)
+
+# GO Terms - Interferon-Related
+go_interferon_ids <- c(
+  "GO:0032609",
+  "GO:0032649",
+  "GO:0032689"
+)
+
+filter_genes_by_terms <- function(df, columns_to_check, terms_list) {
+  # columns_to_check: vettore con i nomi delle colonne in cui cercare i termini (es: c("GO_BP", "GO_MF", "GO_CC"))
+  
+  df %>%
+    rowwise() %>%
+    mutate(
+      # per ogni colonna, splitta i termini in lista e controlla se c'è almeno un termine matching
+      match = any(sapply(columns_to_check, function(col) {
+        terms_in_col <- str_split(get(col), pattern = ";\\s*")[[1]]
+        any(terms_in_col %in% terms_list)
+      }))
+    ) %>%
+    ungroup() %>%
+    filter(match) %>%
+    pull(SYMBOL) %>%
+    base::unique()
+}
+
+go_cols <- c("GO_BP", "GO_MF", "GO_CC")
+
+genes_hallmark <- custom_df %>%
+  rowwise() %>%
+  mutate(
+    terms = list(str_split(HALLMARK_Pathways, pattern = ";\\s*")[[1]]),
+    match = any(terms %in% hallmark_ids)
+  ) %>%
+  ungroup() %>%
+  filter(match) %>%
+  pull(SYMBOL) %>%
+  base::unique()
+
+genes_go_cytokine <- filter_genes_by_terms(custom_df, go_cols, go_cytokine_ids)
+genes_go_inflammation <- filter_genes_by_terms(custom_df, go_cols, go_inflammation_ids)
+genes_go_interferon <- filter_genes_by_terms(custom_df, go_cols, go_interferon_ids)
+
+
+
+
+# Lista ordinata e df originale con valori
+ordered_genes <- merged_sorted$gene
+# Funzione che filtra e restituisce df con gene e log2FC_combined mantenendo l'ordine
+filter_and_order_df <- function(gene_list, merged_df) {
+  # Filtra merged_df per geni in gene_list
+  filtered_df <- merged_df[merged_df$gene %in% gene_list, c("gene", "log2FC_combined")]
+  # Ordina filtered_df secondo l'ordine di merged_df (ovvero merged_sorted)
+  filtered_df <- filtered_df[match(merged_df$gene, filtered_df$gene), ]
+  # Rimuove eventuali NA (casi dove gene non era nella lista)
+  filtered_df <- filtered_df[!is.na(filtered_df$gene), ]
+  
+  return(filtered_df)
+}
+
+# Applica la funzione a ciascuna delle tue liste
+df_gene_symbols        <- filter_and_order_df(gene_symbols, merged_sorted)
+df_genes_hallmark      <- filter_and_order_df(genes_hallmark, merged_sorted)
+df_genes_go_cytokine   <- filter_and_order_df(genes_go_cytokine, merged_sorted)
+df_genes_go_inflammation <- filter_and_order_df(genes_go_inflammation, merged_sorted)
+df_genes_go_interferon <- filter_and_order_df(genes_go_interferon, merged_sorted)
+
+len_hallmark <- nrow(df_genes_hallmark)
+len_cytokine <- nrow(df_genes_go_cytokine)
+len_inflammation <- nrow(df_genes_go_inflammation)
+len_interferon <- nrow(df_genes_go_interferon)
+```
+
+```{r generate_z_matrices, results='asis'}
+list_genes <- read.csv(params$genelists[[1]])[[1]]
+
+top_n <- 50
+sample_df <- sample_info
+sample_df_by_time <- sample_df[order(sample_df$time, sample_df$base_condition), ]
+sample_df_by_cond <- sample_df[order(sample_df$base_condition, sample_df$time), ]
+z_matrix <- t(scale(t(gene_expression)))
+z_matrix_list <- z_matrix[list_genes, ]
+
+# Filter only list_genes
+
+regulation_score_list <- regulation_score %>%
+  filter(gene %in% list_genes)
+df_gene_symbols_list <- df_gene_symbols[df_gene_symbols$gene %in% list_genes, ]
+len_initial_list <- nrow(df_gene_symbols_list)
+
+# MOSTREG
+
+all_most_regulated <- regulation_score_list %>% arrange(desc(reg_score))
+top_most_regulated <- regulation_score_list %>% arrange(desc(reg_score)) %>% slice(1:top_n)
+all_genes_most_reg <- all_most_regulated$gene
+top_genes_most_reg <- top_most_regulated$gene
+
+genes_in_z_mostreg <- head(intersect(all_genes_most_reg, rownames(z_matrix)), 1000)
+top_genes_in_z_mostreg <- intersect(top_genes_most_reg, rownames(z_matrix))
+
+z_matrix_top <- z_matrix[top_genes_in_z_mostreg, ]
+z_matrix_top_ordered_by_day <- z_matrix_top[, sample_df_by_time$sample, drop = FALSE]
+z_matrix_top_ordered_by_treatment <- z_matrix_top[, sample_df_by_cond$sample, drop = FALSE]
+
+# UP & DOWN
+
+all_genes_up <- df_gene_symbols_list[df_gene_symbols_list$log2FC_combined > 0, ]
+all_genes_up <- all_genes_up[order(all_genes_up$log2FC_combined, decreasing = TRUE), ]$gene
+all_genes_down <- df_gene_symbols_list[df_gene_symbols_list$log2FC_combined < 0, ]
+all_genes_down <- all_genes_down[order(all_genes_down$log2FC_combined, decreasing = FALSE), ]$gene
+
+top_genes_up <- head(all_genes_up, top_n)
+top_genes_down <- head(all_genes_down, top_n)
+top_genes_in_z_up <- intersect(top_genes_up, rownames(z_matrix))
+top_genes_in_z_down <- intersect(top_genes_down, rownames(z_matrix))
+
+z_matrix_topup <- z_matrix[top_genes_in_z_up, ]
+z_matrix_topdown <- z_matrix[top_genes_in_z_down, ]
+
+z_matrix_top_ordered_by_day_up <- z_matrix_topup[, sample_df_by_time$sample, drop = FALSE]
+z_matrix_top_ordered_by_day_down <- z_matrix_topdown[, sample_df_by_time$sample, drop = FALSE]
+
+z_matrix_top_ordered_by_treatment_up <- z_matrix_topup[, sample_df_by_cond$sample, drop = FALSE]
+z_matrix_top_ordered_by_treatment_down <- z_matrix_topdown[, sample_df_by_cond$sample, drop = FALSE]
+
+cellheight <- 12  # pixel per gene (riga)
+cellwidth <- 12   # pixel per sample (colonna)
+margin_height <- 200  # margine verticale extra (es. spazio per titolo, legenda, ecc.)
+margin_width  <- 200  # margine orizzontale extra (es. spazio per labels)
+
+cat(paste("\nThe length of the initial list of genes is:", len_initial_list, ", so considering the heatmaps are listing only the top", top_n, "up and downregulated, there are", (len_initial_list - 2*top_n), "genes not shown in the heatmaps", "\n"))
+cat(paste("\nThe length of the HALLMARK list of genes is:", len_hallmark, ", so considering the heatmaps are listing only the top", top_n, "up and downregulated, there are", (len_hallmark - 2*top_n), "genes not shown in the heatmaps", "\n"))
+cat(paste("\nThe length of the cytokines list of genes is:", len_cytokine, ", so considering the heatmaps are listing only the top", top_n, "up and downregulated, there are", (len_cytokine - 2*top_n), "genes not shown in the heatmaps", "\n"))
+cat(paste("\nThe length of the inflammation list of genes is:", len_inflammation, ", so considering the heatmaps are listing only the top", top_n, "up and downregulated, there are", (len_inflammation - 2*top_n), "genes not shown in the heatmaps", "\n"))
+cat(paste("\nThe length of the interferon list of genes is:", len_interferon, ", so the heatmap in this case is listing all the genes in that family", "\n"))
+```
+
+```{r all_genes_heatmaps, eval=FALSE}
+# z_matrix_all_top <- z_matrix[genes_in_z_mostreg, ]
+
+# genes_in_z_up <- head(intersect(all_genes_up, rownames(z_matrix)), 1000)
+# z_matrix_all_topup <- z_matrix[genes_in_z_up, ]
+# genes_in_z_down <- head(intersect(all_genes_down, rownames(z_matrix)), 1000)
+# z_matrix_all_topdown <- z_matrix[genes_in_z_down, ]
+
+# current_matrix <- z_matrix_all_top
+# png(paste0(png_basepath, "/heatmap_allgenes_mostreg_byday.png"), 
+#     width = (ncol(current_matrix) * cellwidth) + margin_width, 
+#     height = (nrow(current_matrix) * cellheight) + margin_height)
+# 
+# pheatmap(
+#   current_matrix,
+#   cluster_rows = FALSE,
+#   cluster_cols = FALSE,
+#   show_rownames = TRUE,
+#   show_colnames = TRUE,
+#   cellheight = cellheight,
+#   cellwidth = cellwidth,
+#   color = colorRampPalette(c("blue", "white", "red"))(50),
+#   main = paste("Top", top_n, "most regulated genes"),
+#   legend = TRUE,
+#   legend_breaks = c(-2, 0, 2),
+#   legend_labels = c("-2 (Z-score)", "0", "2 (Z-score)")
+# )
+# 
+# dev.off()
+# 
+# current_matrix <- z_matrix_all_topup
+# png(paste0(png_basepath, "/heatmap_allgenes_mostreg_byday_up.png"), 
+#     width = (ncol(current_matrix) * cellwidth) + margin_width, 
+#     height = (nrow(current_matrix) * cellheight) + margin_height)
+# 
+# pheatmap(
+#   current_matrix,
+#   cluster_rows = FALSE,
+#   cluster_cols = FALSE,
+#   show_rownames = TRUE,
+#   show_colnames = TRUE,
+#   cellheight = cellheight,
+#   cellwidth = cellwidth,
+#   color = colorRampPalette(c("blue", "white", "red"))(50),
+#   main = paste("Top", top_n, "most regulated genes"),
+#   legend = TRUE,
+#   legend_breaks = c(-2, 0, 2),
+#   legend_labels = c("-2 (Z-score)", "0", "2 (Z-score)")
+# )
+# 
+# dev.off()
+# 
+# current_matrix <- z_matrix_all_topdown
+# png(paste0(png_basepath, "/heatmap_allgenes_mostreg_byday_down.png)", 
+#     width = (ncol(current_matrix) * cellwidth) + margin_width, 
+#     height = (nrow(current_matrix) * cellheight) + margin_height)
+# 
+# pheatmap(
+#   current_matrix,
+#   cluster_rows = FALSE,
+#   cluster_cols = FALSE,
+#   show_rownames = TRUE,
+#   show_colnames = TRUE,
+#   cellheight = cellheight,
+#   cellwidth = cellwidth,
+#   color = colorRampPalette(c("blue", "white", "red"))(50),
+#   main = paste("Top", top_n, "most regulated genes"),
+#   legend = TRUE,
+#   legend_breaks = c(-2, 0, 2),
+#   legend_labels = c("-2 (Z-score)", "0", "2 (Z-score)")
+# )
+# 
+# dev.off()
+```
+
+```{r heatmap_if_saveas_png, eval=FALSE}
+# current_matrix <- z_matrix_top_ordered_by_treatment
+# png(paste0(png_basepath, "/heatmap_genelist_mostreg_bycondition.png"), 
+#     width = (ncol(current_matrix) * cellwidth) + margin_width, 
+#     height = (nrow(current_matrix) * cellheight) + margin_height)
+# 
+# pheatmap(
+#   current_matrix,
+#   cluster_rows = FALSE,
+#   cluster_cols = FALSE,
+#   show_rownames = TRUE,
+#   show_colnames = TRUE,
+#   cellheight = cellheight,
+#   cellwidth = cellwidth,
+#   color = colorRampPalette(c("blue", "white", "red"))(50),
+#   main = paste("Top", top_n, "most regulated genes"),
+#   legend = TRUE,
+#   legend_breaks = c(-2, 0, 2),
+#   legend_labels = c("-2 (Z-score)", "0", "2 (Z-score)")
+# )
+# 
+# dev.off()
+```
+
+```{r generate_heatmaps_and_tables, results='hide'}
+
+initial_genelists_matrices = list(
+  list(z_matrix_top_ordered_by_day, "most regulated genes in the initial genelist,\nordered by day"),
+  list(z_matrix_top_ordered_by_treatment, "most regulated genes in the initial genelist,\nordered by condition"),
+  list(z_matrix_top_ordered_by_day_up, "most upregulated genes in the initial genelist,\nordered by day"),
+  list(z_matrix_top_ordered_by_treatment_up, "most upregulated genes in the initial genelist,\nordered by condition"),
+  list(z_matrix_top_ordered_by_day_down, "most downregulated genes in the initial genelist,\nordered by day"),
+  list(z_matrix_top_ordered_by_treatment_down, "most downregulated genes in the initial genelist,\nordered by condition")
+  )
+
+heatmaps2plot <- list()
+counter = 0
+
+for (element in initial_genelists_matrices) {
+  counter <- counter + 1
+  matrix_data <- element[[1]]
+  description <- element[[2]]
+  
+  heatmap_plot <- pheatmap(
+    matrix_data,
+    cluster_rows = FALSE,
+    cluster_cols = FALSE,
+    show_rownames = TRUE,
+    show_colnames = TRUE,
+    cellheight = cellheight,
+    cellwidth = cellwidth,
+    color = colorRampPalette(c("blue", "white", "red"))(50),
+    main = paste("Top", top_n, description),
+    legend = TRUE,
+    legend_breaks = c(-2, 0, 2),
+    legend_labels = c("-2 (Z-score)", "0", "2 (Z-score)")
+  )
+  
+  # print(p)
+  
+  # Prendi i geni mostrati nella heatmap (rownames della matrice)
+  genes_in_heatmap <- rownames(matrix_data)
+  
+  # Filtra df_combined per questi geni
+  filtered_df <- df_combined[df_combined$gene %in% genes_in_heatmap, ]
+  
+  # Crea la datatable
+  heat_table <- datatable(
+    filtered_df,
+    extensions = 'Buttons',
+    options = list(
+      dom = 'Blfrtip',
+      buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+      lengthMenu = list(c(10, 25, 50, -1),
+                        c(10, 25, 50, "All"))
+    ),
+    rownames = FALSE,
+    caption = paste("Genes in heatmap:", description)
+  )
+  
+  heatmaps2plot[[counter]] <- list(
+    p = heatmap_plot,
+    d = heat_table
+  )
+}
+```
+
+```{r plot_heatmaps_1, fig.height=11}
+heatmaps2plot[[1]]$p
+heatmaps2plot[[1]]$d
+```
+
+```{r plot_heatmaps_2, fig.height=11}
+heatmaps2plot[[2]]$p
+heatmaps2plot[[2]]$d
+```
+
+```{r plot_heatmaps_3, fig.height=11}
+heatmaps2plot[[3]]$p
+heatmaps2plot[[3]]$d
+```
+
+```{r plot_heatmaps_4, fig.height=11}
+heatmaps2plot[[4]]$p
+heatmaps2plot[[4]]$d
+```
+
+```{r plot_heatmaps_5, fig.height=11}
+heatmaps2plot[[5]]$p
+heatmaps2plot[[5]]$d
+```
+
+```{r plot_heatmaps_6, fig.height=11}
+heatmaps2plot[[6]]$p
+heatmaps2plot[[6]]$d
+```
+
+```{r testheat_2}
+family_list <- list()
+
+# Lista dei dati e dei nomi da assegnare
+families <- list(
+  hallmark    = list(df = df_genes_hallmark,       name = "HALLMARK_terms"),
+  cytokine    = list(df = df_genes_go_cytokine,     name = "Cytokines_GO_term"),
+  inflammation= list(df = df_genes_go_inflammation, name = "Inflammation_GO_term"),
+  interferon  = list(df = df_genes_go_interferon,   name = "Interferon_GO_term")
+)
+
+# Popolamento di family_list
+for (fam in names(families)) {
+  family_list[[fam]] <- list(
+    df = families[[fam]]$df,
+    family_name = families[[fam]]$name
+  )
+}
+
+# Lista per salvare matrici e info di plot
+plots_to_do <- list()
+
+for (family in names(family_list)) {
+  
+  df <- family_list[[family]]$df
+  family_name <- family_list[[family]]$family_name
+  
+  if (!"log2FC_combined" %in% colnames(df)) {
+    message(paste("Attenzione:", df, "non contiene la colonna log2FC_combined"))
+    next
+  }
+  
+  n_genes <- nrow(df)
+  
+  if (n_genes > top_n) {
+    # Top upregulated
+    df_sorted_up <- df[order(df$log2FC_combined, decreasing = TRUE), ]
+    top_up_genes <- df_sorted_up$gene[1:top_n]
+    matrix_up <- z_matrix[top_up_genes[top_up_genes %in% rownames(z_matrix)], , drop=FALSE]
+    plots_to_do[[paste0(family, "_top", top_n, "_upregulated")]] <- list(
+      matrix = matrix_up,
+      title = paste(family_name, "- Top", top_n, "Upregulated Genes")
+    )
+    
+    # Top downregulated
+    df_sorted_down <- df[order(df$log2FC_combined, decreasing = FALSE), ]
+    top_down_genes <- df_sorted_down$gene[1:top_n]
+    matrix_down <- z_matrix[top_down_genes[top_down_genes %in% rownames(z_matrix)], , drop=FALSE]
+    plots_to_do[[paste0(family, "_top", top_n, "_downregulated")]] <- list(
+      matrix = matrix_down,
+      title = paste(family_name, "- Top", top_n, "Downregulated Genes")
+    )
+    
+  } else {
+    # Meno di 50 geni: prendi tutti ordinati decrescente
+    df_sorted <- df[order(df$log2FC_combined, decreasing = TRUE), ]
+    all_genes <- df_sorted$gene
+    matrix_all <- z_matrix[all_genes[all_genes %in% rownames(z_matrix)], , drop=FALSE]
+    plots_to_do[[paste0(family, "_all_genes")]] <- list(
+      matrix = matrix_all,
+      title = paste(family_name, "- All Genes\nordered from upregulated to downregulated")
+    )
+  }
+}
+
+sample_order_by_time <- sample_df_by_time$sample
+sample_order_by_cond <- sample_df_by_cond$sample
+
+col_orders <- list(
+  time_then_condition = sample_order_by_time,
+  condition_then_time = sample_order_by_cond
+)
+
+heatmaps2plot <- list()
+counter = 0
+
+for (plot_name in names(plots_to_do)) {
+  p <- plots_to_do[[plot_name]]
+  mat <- p$matrix
+  
+  for (order_name in names(col_orders)) {
+    counter <- counter + 1
+    col_order <- col_orders[[order_name]]
+    
+    # Prendi solo le colonne che ci sono nella matrice e ordinale
+    cols_present <- col_order[col_order %in% colnames(mat)]
+    mat_ordered <- mat[, cols_present, drop=FALSE]
+    
+    plot <- pheatmap(mat_ordered,
+                     cluster_rows = FALSE,
+                     cluster_cols = FALSE,
+                     show_rownames = TRUE,
+                     show_colnames = TRUE,
+                     cellheight = cellheight,
+                     cellwidth = cellwidth,
+                     color = colorRampPalette(c("blue", "white", "red"))(50),
+                     main = paste(p$title, "\nColumns ordered by:", order_name),
+                     legend = TRUE,
+                     legend_breaks = c(-2, 0, 2),
+                     legend_labels = c("-2 (Z-score)", "0", "2 (Z-score)")
+    )
+    
+    # Prendi i geni (rownames) presenti nella matrice ordinata
+    genes_in_heatmap <- rownames(mat_ordered)
+    
+    # Filtra df_combined per quei geni
+    filtered_df <- df_combined[df_combined$gene %in% genes_in_heatmap, ]
+    
+    # Mostra la datatable con filtro
+    res_dt <- datatable(
+      filtered_df,
+      extensions = 'Buttons',
+      options = list(
+        dom = 'Blfrtip',
+        buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+        lengthMenu = list(c(10, 25, 50, -1),
+                          c(10, 25, 50, "All"))
+      ),
+      rownames = FALSE,
+      caption = paste("Genes in heatmap:", p$title, "\nColumns ordered by:", order_name)
+    )
+    
+    heatmaps2plot[[counter]] <- list(
+      p = plot,
+      d = res_dt
+    )
+  }
+}
+```
+
+```{r plot_heatmaps_12, fig.height=11}
+heatmaps2plot[[1]]$p
+heatmaps2plot[[1]]$d
+```
+
+```{r plot_heatmaps_22, fig.height=11}
+heatmaps2plot[[2]]$p
+heatmaps2plot[[2]]$d
+```
+
+```{r plot_heatmaps_32, fig.height=11}
+heatmaps2plot[[3]]$p
+heatmaps2plot[[3]]$d
+```
+
+```{r plot_heatmaps_42, fig.height=11}
+heatmaps2plot[[4]]$p
+heatmaps2plot[[4]]$d
+```
+
+```{r plot_heatmaps_52, fig.height=11}
+heatmaps2plot[[5]]$p
+heatmaps2plot[[5]]$d
+```
+
+```{r plot_heatmaps_62, fig.height=11}
+heatmaps2plot[[6]]$p
+heatmaps2plot[[6]]$d
+```
+
+```{r plot_heatmaps_72, fig.height=11}
+heatmaps2plot[[7]]$p
+heatmaps2plot[[7]]$d
+```
+
+```{r plot_heatmaps_82, fig.height=11}
+heatmaps2plot[[8]]$p
+heatmaps2plot[[8]]$d
+```
+
+```{r plot_heatmaps_92, fig.height=11}
+heatmaps2plot[[9]]$p
+heatmaps2plot[[9]]$d
+```
+
+```{r plot_heatmaps_102, fig.height=11}
+heatmaps2plot[[10]]$p
+heatmaps2plot[[10]]$d
+```
+
+```{r plot_heatmaps_112, fig.height=11}
+heatmaps2plot[[11]]$p
+heatmaps2plot[[11]]$d
+```
+
+```{r plot_heatmaps_122, fig.height=11}
+heatmaps2plot[[12]]$p
+heatmaps2plot[[12]]$d
+```
+
+```{r plot_heatmaps_132, fig.height=11}
+heatmaps2plot[[13]]$p
+heatmaps2plot[[13]]$d
+```
+
+```{r plot_heatmaps_142, fig.height=11}
+heatmaps2plot[[14]]$p
+heatmaps2plot[[14]]$d
+```
+
+<div style="color:red;">
+
+##### Gene expression Heatmap
+
+ongoing
 
 </div>
 
@@ -497,7 +1162,7 @@ A bar plot displaying total read counts per sample is shown below
 ```{r counts_dds, results="asis", fig.width=8}
 
 lib_sizes <- data.frame(
-  sample_description = colData(dds)$sample_description,
+  sample_description = colData(dds)$sample,
   total_counts = colSums(counts(dds))
 )
 
@@ -530,9 +1195,6 @@ A violin plot of VST-normalized counts provides an overview of the global distri
 rld_matrix <- assay(rld)
 df_long <- reshape2::melt(rld_matrix, varnames = c("gene", "sample"), value.name = "expression")
 
-df_long$sample <- name_map[as.character(df_long$sample)]
-
-
 ggplot(df_long, aes(x = sample, y = expression)) +
   geom_violin(trim = FALSE, fill = "#8da0cb", color = "black") +
   geom_boxplot(width = 0.1, outlier.size = 0.5) +
@@ -562,8 +1224,7 @@ Below we present the distribution of IFI6 normalised expression across condition
 
 ```{r}
 ifi6 = df_long[df_long$gene == "IFI6", ]
-ifi6$group = unlist(lapply(strsplit(ifi6$sample, "_D"), "[[", 1))
-
+ifi6$group <- unlist(lapply(strsplit(as.character(ifi6$sample), "_D"), "[[", 1))
 
 ggplot(ifi6, aes(x = group, y = expression)) +
   geom_violin(trim = FALSE, fill = "#8da0cb", color = "black") +
@@ -583,120 +1244,65 @@ ggplot(ifi6, aes(x = group, y = expression)) +
 
 Below we present the distributions of the selected genes expression across conditions in a barplot where the height of each bar represents the average expression of all the selected genes in that particular condition. Each condition includes all the available replicates except those already filtered. 
 
-```{r load_data}
-list1 <- read.csv("/hpcnfs/scratch/DIMA/gmariani/PROJECTS/rna/reports/projects/frascolla/frascolla_chemoresistance/data/UNIQUELIST_shIFI6_vs_shIFI6.csv")[[1]]
-list2 <- read.csv("/hpcnfs/scratch/DIMA/gmariani/PROJECTS/rna/reports/projects/frascolla/frascolla_chemoresistance/data/UNIQUELIST_shIFI6_vs_shSCR.csv")[[1]]
-
+```{r load_data, results='asis'}
 counts_matrix <- assay(dds, "counts")  # raw counts
 vst_matrix <- assay(dds, "vst") 
+  
+for (i in params$genelists) {
+    
+  list <- read.csv(i)[[1]]
+  
+  cat(paste("\n\n### Average Expression, Raw counts, gene list:", basename(i), "\n\n"))
+  
+  count_matrix_subset <- counts_matrix[rownames(counts_matrix) %in% list, ]
+  
+  conditions <- gsub("_rep[0-9]+$", "", colnames(count_matrix_subset))
+  t_mat <- t(count_matrix_subset)
+  summed_mat <- rowsum(t_mat, group = conditions)
+  rep_counts <- table(conditions)
+  mean_mat <- sweep(summed_mat, 1, rep_counts, FUN = "/")
+  mean_mat <- t(mean_mat)
+  mean_expr_per_sample <- colMeans(mean_mat)
+  df <- data.frame(
+    sample = names(mean_expr_per_sample),
+    mean_expression = mean_expr_per_sample
+  )
+  
+  # plot con ggplot2
+  plot1 <- ggplot(df, aes(x = sample, y = mean_expression)) +
+    geom_bar(stat = "identity", fill = "steelblue") +
+    theme_minimal() +
+    xlab("Condition") +
+    ylab("Raw counts average gene expression") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  print(plot1)
+  
+  cat(paste("\n\n### Average Expression, VST normalized counts, gene list:", basename(i), "\n\n"))
+  
+  vst_matrix_subset <- vst_matrix[rownames(vst_matrix) %in% list, ]
+  
+  conditions <- gsub("_rep[0-9]+$", "", colnames(vst_matrix_subset))
+  t_mat <- t(vst_matrix_subset)
+  summed_mat <- rowsum(t_mat, group = conditions)
+  rep_counts <- table(conditions)
+  mean_mat <- sweep(summed_mat, 1, rep_counts, FUN = "/")
+  mean_mat <- t(mean_mat)
+  mean_expr_per_sample <- colMeans(mean_mat)
+  df <- data.frame(
+    sample = names(mean_expr_per_sample),
+    mean_expression = mean_expr_per_sample
+  )
+  
+  # plot con ggplot2
+  plot2 <- ggplot(df, aes(x = sample, y = mean_expression)) +
+    geom_bar(stat = "identity", fill = "steelblue") +
+    theme_minimal() +
+    xlab("Condition") +
+    ylab("VST normalized average gene expression") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  print(plot2)
+}
 ```
-
-### Average Expression, Raw counts, gene list: shIFI6_vs_shIFI6
-
-```{r barplot1}
-count_matrix_subset1 <- counts_matrix[rownames(counts_matrix) %in% list1, ]
-
-conditions <- gsub("_rep[0-9]+$", "", colnames(count_matrix_subset1))
-t_mat <- t(count_matrix_subset1)
-summed_mat <- rowsum(t_mat, group = conditions)
-rep_counts <- table(conditions)
-mean_mat <- sweep(summed_mat, 1, rep_counts, FUN = "/")
-mean_mat <- t(mean_mat)
-mean_expr_per_sample <- colMeans(mean_mat)
-df <- data.frame(
-  sample = names(mean_expr_per_sample),
-  mean_expression = mean_expr_per_sample
-)
-
-# plot con ggplot2
-ggplot(df, aes(x = sample, y = mean_expression)) +
-  geom_bar(stat = "identity", fill = "steelblue") +
-  theme_minimal() +
-  xlab("Condition") +
-  ylab("Raw counts average gene expression") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-### Average Expression, Raw counts, gene list: shIFI6_vs_shSCR
-
-```{r barplot2}
-count_matrix_subset2 <- counts_matrix[rownames(counts_matrix) %in% list2, ]
-
-conditions <- gsub("_rep[0-9]+$", "", colnames(count_matrix_subset2))
-t_mat <- t(count_matrix_subset2)
-summed_mat <- rowsum(t_mat, group = conditions)
-rep_counts <- table(conditions)
-mean_mat <- sweep(summed_mat, 1, rep_counts, FUN = "/")
-mean_mat <- t(mean_mat)
-mean_expr_per_sample <- colMeans(mean_mat)
-df <- data.frame(
-  sample = names(mean_expr_per_sample),
-  mean_expression = mean_expr_per_sample
-)
-
-# plot con ggplot2
-ggplot(df, aes(x = sample, y = mean_expression)) +
-  geom_bar(stat = "identity", fill = "steelblue") +
-  theme_minimal() +
-  xlab("Condition") +
-  ylab("Raw counts average gene expression") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-### Average Expression, VST normalized counts, gene list: shIFI6_vs_shIFI6
-
-```{r barplot3}
-vst_matrix_subset1 <- vst_matrix[rownames(vst_matrix) %in% list1, ]
-
-conditions <- gsub("_rep[0-9]+$", "", colnames(vst_matrix_subset1))
-t_mat <- t(vst_matrix_subset1)
-summed_mat <- rowsum(t_mat, group = conditions)
-rep_counts <- table(conditions)
-mean_mat <- sweep(summed_mat, 1, rep_counts, FUN = "/")
-mean_mat <- t(mean_mat)
-mean_expr_per_sample <- colMeans(mean_mat)
-df <- data.frame(
-  sample = names(mean_expr_per_sample),
-  mean_expression = mean_expr_per_sample
-)
-
-# plot con ggplot2
-ggplot(df, aes(x = sample, y = mean_expression)) +
-  geom_bar(stat = "identity", fill = "steelblue") +
-  theme_minimal() +
-  xlab("Condition") +
-  ylab("VST normalized average gene expression") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-### Average Expression, VST normalized counts, gene list: shIFI6_vs_shSCR
-
-```{r barplot4}
-vst_matrix_subset2 <- vst_matrix[rownames(vst_matrix) %in% list2, ]
-
-conditions <- gsub("_rep[0-9]+$", "", colnames(vst_matrix_subset2))
-t_mat <- t(vst_matrix_subset2)
-summed_mat <- rowsum(t_mat, group = conditions)
-rep_counts <- table(conditions)
-mean_mat <- sweep(summed_mat, 1, rep_counts, FUN = "/")
-mean_mat <- t(mean_mat)
-mean_expr_per_sample <- colMeans(mean_mat)
-df <- data.frame(
-  sample = names(mean_expr_per_sample),
-  mean_expression = mean_expr_per_sample
-)
-
-# plot con ggplot2
-ggplot(df, aes(x = sample, y = mean_expression)) +
-  geom_bar(stat = "identity", fill = "steelblue") +
-  theme_minimal() +
-  xlab("Condition") +
-  ylab("VST normalized average gene expression") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-
-## Differential expression analysis
-
-The report with specific comparisons can be found here:
 
