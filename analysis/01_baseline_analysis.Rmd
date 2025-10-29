@@ -19,6 +19,7 @@ params:
   qvalue: 0.05
   genelists: 
     - "./data/251015_genelist_frascolla.csv"
+  apo_list: "./data/apoptosis_gene_list.csv"
   gene_name_type: "SYMBOL"
   design_vars: "base_condition"
   contrast_variable: "base_condition"
@@ -549,7 +550,7 @@ regulation_score <- expr_slopes %>%
   ungroup()
 ```
 
-```{r generate_4_families_genelists}
+```{r generate_families_genelists}
 gene_symbols <- rownames(dds)
 # gene_symbols <- gene_symbols[gene_symbols %in% rownames(gene_expression)]
 gene_df <- bitr(gene_symbols, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)
@@ -661,6 +662,7 @@ genes_go_cytokine <- filter_genes_by_terms(custom_df, go_cols, go_cytokine_ids)
 genes_go_inflammation <- filter_genes_by_terms(custom_df, go_cols, go_inflammation_ids)
 genes_go_interferon <- filter_genes_by_terms(custom_df, go_cols, go_interferon_ids)
 
+genes_go_apoptosis <- read.csv(params$apo_list)[[1]]
 
 
 
@@ -684,11 +686,15 @@ df_genes_hallmark      <- filter_and_order_df(genes_hallmark, merged_sorted)
 df_genes_go_cytokine   <- filter_and_order_df(genes_go_cytokine, merged_sorted)
 df_genes_go_inflammation <- filter_and_order_df(genes_go_inflammation, merged_sorted)
 df_genes_go_interferon <- filter_and_order_df(genes_go_interferon, merged_sorted)
+df_genes_go_apoptosis <- filter_and_order_df(genes_go_apoptosis, merged_sorted)
 
-len_hallmark <- nrow(df_genes_hallmark)
-len_cytokine <- nrow(df_genes_go_cytokine)
-len_inflammation <- nrow(df_genes_go_inflammation)
-len_interferon <- nrow(df_genes_go_interferon)
+len_list <- list(
+  HALLMARK     = nrow(df_genes_hallmark),
+  Cytokine     = nrow(df_genes_go_cytokine),
+  Inflammation = nrow(df_genes_go_inflammation),
+  Interferon   = nrow(df_genes_go_interferon),
+  Apoptosis    = nrow(df_genes_go_apoptosis)
+)
 ```
 
 ```{r generate_z_matrices, results='asis'}
@@ -748,11 +754,29 @@ cellwidth <- 12   # pixel per sample (colonna)
 margin_height <- 200  # margine verticale extra (es. spazio per titolo, legenda, ecc.)
 margin_width  <- 200  # margine orizzontale extra (es. spazio per labels)
 
-cat(paste("\nThe length of the initial list of genes is:", len_initial_list, ", so considering the heatmaps are listing only the top", top_n, "up and downregulated, there are", (len_initial_list - 2*top_n), "genes not shown in the heatmaps", "\n"))
-cat(paste("\nThe length of the HALLMARK list of genes is:", len_hallmark, ", so considering the heatmaps are listing only the top", top_n, "up and downregulated, there are", (len_hallmark - 2*top_n), "genes not shown in the heatmaps", "\n"))
-cat(paste("\nThe length of the cytokines list of genes is:", len_cytokine, ", so considering the heatmaps are listing only the top", top_n, "up and downregulated, there are", (len_cytokine - 2*top_n), "genes not shown in the heatmaps", "\n"))
-cat(paste("\nThe length of the inflammation list of genes is:", len_inflammation, ", so considering the heatmaps are listing only the top", top_n, "up and downregulated, there are", (len_inflammation - 2*top_n), "genes not shown in the heatmaps", "\n"))
-cat(paste("\nThe length of the interferon list of genes is:", len_interferon, ", so the heatmap in this case is listing all the genes in that family", "\n"))
+for (name in names(len_list)) {
+  n_genes <- len_list[[name]]
+  
+  cat(paste0("\nThe length of the ", name, " list of genes is: ", n_genes, ". "))
+  
+  if (n_genes < top_n) {
+    # Caso 1: meno di top_n → tutti i geni mostrati
+    cat("Since there are fewer than ", top_n, " genes, all of them are shown in the heatmap.\n")
+    
+  } else if (n_genes >= top_n && n_genes <= 2 * top_n) {
+    # Caso 2: tra top_n e 2*top_n → tutti inclusi ma con overlap
+    overlap <- (2 * top_n) - n_genes
+    cat("All genes are included in the heatmaps, although there are ", overlap,
+        " genes overlapping between up- and downregulated sets.\n", sep = "")
+    
+  } else {
+    # Caso 3: più di 2*top_n → alcuni geni non mostrati
+    not_shown <- n_genes - (2 * top_n)
+    cat("Considering that the heatmaps list only the top ", top_n,
+        " up- and downregulated genes, there are ", not_shown,
+        " genes not shown in the heatmaps.\n", sep = "")
+  }
+}
 ```
 
 ```{r all_genes_heatmaps, eval=FALSE}
@@ -955,7 +979,8 @@ families <- list(
   hallmark    = list(df = df_genes_hallmark,       name = "HALLMARK_terms"),
   cytokine    = list(df = df_genes_go_cytokine,     name = "Cytokines_GO_term"),
   inflammation= list(df = df_genes_go_inflammation, name = "Inflammation_GO_term"),
-  interferon  = list(df = df_genes_go_interferon,   name = "Interferon_GO_term")
+  interferon  = list(df = df_genes_go_interferon,   name = "Interferon_GO_term"),
+  apoptosis  = list(df = df_genes_go_apoptosis,   name = "Apoptosis_GO_term")
 )
 
 # Popolamento di family_list
@@ -1077,74 +1102,116 @@ for (plot_name in names(plots_to_do)) {
 }
 ```
 
-```{r plot_heatmaps_12, fig.height=11}
-heatmaps2plot[[1]]$p
-heatmaps2plot[[1]]$d
+```{r init_counter, fig.height=11}
+counter <- 1
 ```
 
-```{r plot_heatmaps_22, fig.height=11}
-heatmaps2plot[[2]]$p
-heatmaps2plot[[2]]$d
+```{r heatmap_fam_1, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
 ```
 
-```{r plot_heatmaps_32, fig.height=11}
-heatmaps2plot[[3]]$p
-heatmaps2plot[[3]]$d
+```{r heatmap_fam_2, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
 ```
 
-```{r plot_heatmaps_42, fig.height=11}
-heatmaps2plot[[4]]$p
-heatmaps2plot[[4]]$d
+```{r heatmap_fam_3, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
 ```
 
-```{r plot_heatmaps_52, fig.height=11}
-heatmaps2plot[[5]]$p
-heatmaps2plot[[5]]$d
+```{r heatmap_fam_4, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
 ```
 
-```{r plot_heatmaps_62, fig.height=11}
-heatmaps2plot[[6]]$p
-heatmaps2plot[[6]]$d
+```{r heatmap_fam_5, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
 ```
 
-```{r plot_heatmaps_72, fig.height=11}
-heatmaps2plot[[7]]$p
-heatmaps2plot[[7]]$d
+```{r heatmap_fam_6, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
 ```
 
-```{r plot_heatmaps_82, fig.height=11}
-heatmaps2plot[[8]]$p
-heatmaps2plot[[8]]$d
+```{r heatmap_fam_7, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
 ```
 
-```{r plot_heatmaps_92, fig.height=11}
-heatmaps2plot[[9]]$p
-heatmaps2plot[[9]]$d
+```{r heatmap_fam_8, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
 ```
 
-```{r plot_heatmaps_102, fig.height=11}
-heatmaps2plot[[10]]$p
-heatmaps2plot[[10]]$d
+```{r heatmap_fam_9, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
 ```
 
-```{r plot_heatmaps_112, fig.height=11}
-heatmaps2plot[[11]]$p
-heatmaps2plot[[11]]$d
+```{r heatmap_fam_10, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
 ```
 
-```{r plot_heatmaps_122, fig.height=11}
-heatmaps2plot[[12]]$p
-heatmaps2plot[[12]]$d
+```{r heatmap_fam_11, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
 ```
 
-```{r plot_heatmaps_132, fig.height=11}
-heatmaps2plot[[13]]$p
-heatmaps2plot[[13]]$d
+```{r heatmap_fam_12, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
 ```
 
-```{r plot_heatmaps_142, fig.height=11}
-heatmaps2plot[[14]]$p
-heatmaps2plot[[14]]$d
+```{r heatmap_fam_13, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
+```
+
+```{r heatmap_fam_14, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
+```
+
+```{r heatmap_fam_15, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
+```
+
+```{r heatmap_fam_16, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
+```
+
+```{r heatmap_fam_17, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
+```
+
+```{r heatmap_fam_18, fig.height=11}
+heatmaps2plot[[counter]]$p
+heatmaps2plot[[counter]]$d
+counter <- counter + 1
 ```
 
 <div style="color:red;">
